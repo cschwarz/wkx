@@ -1,0 +1,17 @@
+{
+  "name": "node-wkx",
+  "version": "0.0.1",
+  "description": "",
+  "main": "wkx.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "mocha": "~1.13.0"
+  }
+}
