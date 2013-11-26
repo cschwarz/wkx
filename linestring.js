@@ -13,12 +13,12 @@ LineString._parseWkt = function (value) {
 
 LineString._parseWkb = function (value) {
     var lineString = new LineString();
-    
+
     var pointCount = value.readInt32();
-    
+
     for (var i = 0; i < pointCount; i++)
         lineString.points.push(new Point(value.readDouble(), value.readDouble()));
-    
+
     return lineString;
 };
 
@@ -26,15 +26,19 @@ LineString.prototype.toWkt = function () {
     if (this.points.length === 0)
         return Types.wkt.LineString + ' EMPTY';
 
-    var wkt = Types.wkt.LineString + '(';
+    return Types.wkt.LineString + this._toInnerWkt();
+};
+
+LineString.prototype._toInnerWkt = function () {
+    var innerWkt = '(';
 
     for (var i = 0; i < this.points.length; i++)
-        wkt += this.points[i].x + ' ' + this.points[i].y + ',';
+        innerWkt += this.points[i].x + ' ' + this.points[i].y + ',';
 
-    wkt = wkt.slice(0, -1);
-    wkt += ')';
+    innerWkt = innerWkt.slice(0, -1);
+    innerWkt += ')';
 
-    return wkt;
+    return innerWkt;
 };
 
 LineString.prototype.toWkb = function () {

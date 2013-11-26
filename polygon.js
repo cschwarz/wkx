@@ -42,28 +42,32 @@ Polygon.prototype.toWkt = function () {
     if (this.exteriorRing.length === 0)
         return Types.wkt.Polygon + ' EMPTY';
 
-    var wkt = Types.wkt.Polygon + '((';
+    return Types.wkt.Polygon + this._toInnerWkt();
+};
+
+Polygon.prototype._toInnerWkt = function () {
+    var innerWkt = '((';
 
     for (var i = 0; i < this.exteriorRing.length; i++)
-        wkt += this.exteriorRing[i].x + ' ' + this.exteriorRing[i].y + ',';
+        innerWkt += this.exteriorRing[i].x + ' ' + this.exteriorRing[i].y + ',';
 
-    wkt = wkt.slice(0, -1);
-    wkt += ')';
+    innerWkt = innerWkt.slice(0, -1);
+    innerWkt += ')';
 
     for (i = 0; i < this.interiorRings.length; i++) {
-        wkt += ',(';
+        innerWkt += ',(';
 
         for (var j = 0; j < this.interiorRings[i].length; j++) {
-            wkt += this.interiorRings[i][j].x + ' ' + this.interiorRings[i][j].y + ',';
+            innerWkt += this.interiorRings[i][j].x + ' ' + this.interiorRings[i][j].y + ',';
         }
 
-        wkt = wkt.slice(0, -1);
-        wkt += ')';
+        innerWkt = innerWkt.slice(0, -1);
+        innerWkt += ')';
     }
 
-    wkt += ')';
+    innerWkt += ')';
 
-    return wkt;
+    return innerWkt;
 };
 
 Polygon.prototype.toWkb = function () {

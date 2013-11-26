@@ -1,0 +1,61 @@
+module.exports = MultiPolygon;
+
+var Types = require('./types');
+var Geometry = require('./geometry');
+var BinaryWriter = require('./binarywriter');
+
+function MultiPolygon(polygons) {
+    this.polygons = polygons || [];
+}
+
+MultiPolygon._parseWkt = function (value) {
+};
+
+MultiPolygon._parseWkb = function (value) {
+    var multiPolygon = new MultiPolygon();
+
+    var polygonCount = value.readInt32();
+
+    for (var i = 0; i < polygonCount; i++)
+        multiPolygon.polygons.push(Geometry.parse(value));
+
+    return multiPolygon;
+};
+
+MultiPolygon.prototype.toWkt = function () {
+    if (this.polygons.length === 0)
+        return Types.wkt.MultiPolygon + ' EMPTY';
+
+    var wkt = Types.wkt.MultiPolygon + '(';
+
+    for (var i = 0; i < this.polygons.length; i++)
+        wkt += this.polygons[i]._toInnerWkt() + ',';
+
+    wkt = wkt.slice(0, -1);
+    wkt += ')';
+
+    return wkt;
+};
+
+MultiPolygon.prototype.toWkb = function () {
+    var wkb = new BinaryWriter(this._getWkbSize());
+
+    wkb.writeInt8(1);
+
+    wkb.writeInt32LE(Types.wkb.MultiPolygon);
+    wkb.writeInt32LE(this.polygons.length);
+
+    for (var i = 0; i < this.polygons.length; i++)
+        wkb.writeBuffer(this.polygons[i].toWkb());
+
+    return wkb.buffer;
+};
+
+MultiPolygon.prototype._getWkbSize = function () {
+    var size = 1 + 4 + 4;
+
+    for (var i = 0; i < this.polygons.length; i++)
+        size += this.polygons[i]._getWkbSize();
+
+    return size;
+};

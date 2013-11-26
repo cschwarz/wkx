@@ -4,6 +4,9 @@ var Types = require('./types');
 var Point = require('./point');
 var LineString = require('./linestring');
 var Polygon = require('./polygon');
+var MultiPoint = require('./multipoint');
+var MultiLineString = require('./multilinestring');
+var MultiPolygon = require('./multipolygon');
 var GeometryCollection = require('./geometrycollection');
 var BinaryReader = require('./binaryreader');
 
@@ -43,6 +46,12 @@ Geometry._parseWkb = function (value) {
         return LineString._parseWkb(binaryReader);
     case Types.wkb.Polygon:
         return Polygon._parseWkb(binaryReader);
+    case Types.wkb.MultiPoint:
+        return MultiPoint._parseWkb(binaryReader);
+    case Types.wkb.MultiLineString:
+        return MultiLineString._parseWkb(binaryReader);
+    case Types.wkb.MultiPolygon:
+        return MultiPolygon._parseWkb(binaryReader);
     case Types.wkb.GeometryCollection:
         return GeometryCollection._parseWkb(binaryReader);
     }
