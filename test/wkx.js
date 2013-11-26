@@ -4,155 +4,76 @@ var LineString = require('../linestring');
 var Polygon = require('../polygon');
 var GeometryCollection = require('../geometrycollection');
 
+var testData = require('./testdata');
+
 var assert = require('assert');
 
 describe('wkx', function () {
     describe('Geometry', function () {
         it('parse()', function () {
-            //assert.deepEqual(Geometry.parse(new Buffer('010400000000000000', 'hex')), new Point());
-            assert.deepEqual(Geometry.parse(new Buffer('0101000000000000000000f03f0000000000000040', 'hex')), new Point(1, 2));
+            //assert.deepEqual(Geometry.parse(new Buffer(testData.emptyPoint.wkb, 'hex'), testData.emptyPoint.geometry));
+            assert.deepEqual(Geometry.parse(new Buffer(testData.point.wkb, 'hex')), testData.point.geometry);
 
-            assert.deepEqual(Geometry.parse(new Buffer('010200000000000000', 'hex')), new LineString());
-            assert.deepEqual(Geometry.parse(new Buffer('010200000002000000000000000000f03f000000000000004000000000000008400000000000001040', 'hex')),
-                new LineString([new Point(1, 2), new Point(3, 4)]));
+            assert.deepEqual(Geometry.parse(new Buffer(testData.emptyLineString.wkb, 'hex')), testData.emptyLineString.geometry);
+            assert.deepEqual(Geometry.parse(new Buffer(testData.lineString.wkb, 'hex')), testData.lineString.geometry);
 
-            assert.deepEqual(Geometry.parse(new Buffer('010300000000000000', 'hex')), new Polygon());
-            assert.deepEqual(Geometry.parse(new Buffer(
-                '01030000000100000004000000000000000000f03f00000000000000400000000000000840000000' +
-                '000000104000000000000014400000000000001840000000000000f03f0000000000000040', 'hex')),
-                new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)]));
-            assert.deepEqual(Geometry.parse(new Buffer(
-                '01030000000200000004000000000000000000f03f00000000000000400000000000000840000000' +
-                '000000104000000000000014400000000000001840000000000000f03f0000000000000040040000' +
-                '00000000000000264000000000000028400000000000002a400000000000002c400000000000002e' +
-                '40000000000000304000000000000026400000000000002840', 'hex')),
-                new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
-                [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)]]));
-            assert.deepEqual(Geometry.parse(new Buffer(
-                '01030000000300000004000000000000000000f03f00000000000000400000000000000840000000' +
-                '000000104000000000000014400000000000001840000000000000f03f0000000000000040040000' +
-                '00000000000000264000000000000028400000000000002a400000000000002c400000000000002e' +
-                '40000000000000304000000000000026400000000000002840040000000000000000003540000000' +
-                '00000036400000000000003740000000000000384000000000000039400000000000003a40000000' +
-                '00000035400000000000003640', 'hex')),
-                new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
-                [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)],
-                [new Point(21, 22), new Point(23, 24), new Point(25, 26), new Point(21, 22)]]));
+            assert.deepEqual(Geometry.parse(new Buffer(testData.emptyPolygon.wkb, 'hex')), testData.emptyPolygon.geometry);
+            assert.deepEqual(Geometry.parse(new Buffer(testData.polygon.wkb, 'hex')), testData.polygon.geometry);
+            assert.deepEqual(Geometry.parse(new Buffer(testData.polygonWithOneInteriorRing.wkb, 'hex')), testData.polygonWithOneInteriorRing.geometry);
+            assert.deepEqual(Geometry.parse(new Buffer(testData.polygonWithTwoInteriorRings.wkb, 'hex')), testData.polygonWithTwoInteriorRings.geometry);
 
-            assert.deepEqual(Geometry.parse(new Buffer('010700000000000000', 'hex')), new GeometryCollection());
-            assert.deepEqual(Geometry.parse(new Buffer('0107000000010000000101000000000000000000f03f0000000000000040', 'hex')),
-                new GeometryCollection([new Point(1, 2)]));
-            assert.deepEqual(Geometry.parse(new Buffer('0107000000020000000101000000000000000000f03f000000000000004001020000000200000000' +
-                '0000000000f03f000000000000004000000000000008400000000000001040', 'hex')),
-                new GeometryCollection([new Point(1, 2), new LineString([new Point(1, 2), new Point(3, 4)])]));
-            assert.deepEqual(Geometry.parse(new Buffer(
-                '0107000000030000000101000000000000000000f03f000000000000004001020000000200000000' +
-                '0000000000f03f000000000000004000000000000008400000000000001040010300000003000000' +
-                '04000000000000000000f03f00000000000000400000000000000840000000000000104000000000' +
-                '000014400000000000001840000000000000f03f0000000000000040040000000000000000002640' +
-                '00000000000028400000000000002a400000000000002c400000000000002e400000000000003040' +
-                '00000000000026400000000000002840040000000000000000003540000000000000364000000000' +
-                '00003740000000000000384000000000000039400000000000003a40000000000000354000000000' +
-                '00003640', 'hex')),
-                new GeometryCollection([
-                    new Point(1, 2),
-                    new LineString([new Point(1, 2), new Point(3, 4)]),
-                    new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
-                        [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)],
-                        [new Point(21, 22), new Point(23, 24), new Point(25, 26), new Point(21, 22)]])]));
-
+            assert.deepEqual(Geometry.parse(new Buffer(testData.emptyGeometryCollection.wkb, 'hex')), testData.emptyGeometryCollection.geometry);
+            assert.deepEqual(Geometry.parse(new Buffer(testData.geometryCollectionWithPoint.wkb, 'hex')), testData.geometryCollectionWithPoint.geometry);
+            assert.deepEqual(Geometry.parse(new Buffer(testData.geometryCollectionWithPointAndLineString.wkb, 'hex')), testData.geometryCollectionWithPointAndLineString.geometry);
+            assert.deepEqual(Geometry.parse(new Buffer(testData.geometryCollectionWithPointAndLineStringAndPolygon.wkb, 'hex')), testData.geometryCollectionWithPointAndLineStringAndPolygon.geometry);
         });
     });
 	describe('Point', function () {
 		it('toWkt()', function () {
-            assert.equal(new Point().toWkt(), 'POINT EMPTY');
-			assert.equal(new Point(1, 2).toWkt(), 'POINT(1 2)');
+            assert.equal(testData.emptyPoint.geometry.toWkt(), testData.emptyPoint.wkt);
+            assert.equal(testData.point.geometry.toWkt(), testData.point.wkt);
 		});
         it('toWkb()', function () {
-            assert.equal(new Point().toWkb().toString('hex'), '010400000000000000');
-			assert.equal(new Point(1, 2).toWkb().toString('hex'), '0101000000000000000000f03f0000000000000040');
+            assert.equal(testData.emptyPoint.geometry.toWkb().toString('hex'), testData.emptyPoint.wkb);
+            assert.equal(testData.point.geometry.toWkb().toString('hex'), testData.point.wkb);
 		});
 	});
     describe('LineString', function () {
 		it('toWkt()', function () {
-            assert.equal(new LineString().toWkt(), 'LINESTRING EMPTY');
-			assert.equal(new LineString([new Point(1, 2), new Point(3, 4)]).toWkt(), 'LINESTRING(1 2,3 4)');
+            assert.equal(testData.emptyLineString.geometry.toWkt(), testData.emptyLineString.wkt);
+            assert.equal(testData.lineString.geometry.toWkt(), testData.lineString.wkt);
 		});
         it('toWkb()', function () {
-            assert.equal(new LineString().toWkb().toString('hex'), '010200000000000000');
-			assert.equal(new LineString([new Point(1, 2), new Point(3, 4)]).toWkb().toString('hex'),
-                '010200000002000000000000000000f03f000000000000004000000000000008400000000000001040');
+            assert.equal(testData.emptyLineString.geometry.toWkb().toString('hex'), testData.emptyLineString.wkb);
+            assert.equal(testData.lineString.geometry.toWkb().toString('hex'), testData.lineString.wkb);
 		});
 	});
     describe('Polygon', function () {
 		it('toWkt()', function () {
-            assert.equal(new Polygon().toWkt(), 'POLYGON EMPTY');
-			assert.equal(new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)]).toWkt(), 'POLYGON((1 2,3 4,5 6,1 2))');
-            assert.equal(new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
-                [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)]]).toWkt(),
-                'POLYGON((1 2,3 4,5 6,1 2),(11 12,13 14,15 16,11 12))');
-            assert.equal(new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
-                [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)],
-                [new Point(21, 22), new Point(23, 24), new Point(25, 26), new Point(21, 22)]]).toWkt(),
-                'POLYGON((1 2,3 4,5 6,1 2),(11 12,13 14,15 16,11 12),(21 22,23 24,25 26,21 22))');
+            assert.equal(testData.emptyPolygon.geometry.toWkt(), testData.emptyPolygon.wkt);
+            assert.equal(testData.polygon.geometry.toWkt(), testData.polygon.wkt);
+            assert.equal(testData.polygonWithOneInteriorRing.geometry.toWkt(), testData.polygonWithOneInteriorRing.wkt);
+            assert.equal(testData.polygonWithTwoInteriorRings.geometry.toWkt(), testData.polygonWithTwoInteriorRings.wkt);
 		});
         it('toWkb()', function () {
-            assert.equal(new Polygon().toWkb().toString('hex'), '010300000000000000');
-			assert.equal(new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)]).toWkb().toString('hex'),
-                '01030000000100000004000000000000000000f03f00000000000000400000000000000840000000' +
-                '000000104000000000000014400000000000001840000000000000f03f0000000000000040');
-            assert.equal(new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
-                [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)]]).toWkb().toString('hex'),
-                '01030000000200000004000000000000000000f03f00000000000000400000000000000840000000' +
-                '000000104000000000000014400000000000001840000000000000f03f0000000000000040040000' +
-                '00000000000000264000000000000028400000000000002a400000000000002c400000000000002e' +
-                '40000000000000304000000000000026400000000000002840');
-            assert.equal(new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
-                [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)],
-                [new Point(21, 22), new Point(23, 24), new Point(25, 26), new Point(21, 22)]]).toWkb().toString('hex'),
-                '01030000000300000004000000000000000000f03f00000000000000400000000000000840000000' +
-                '000000104000000000000014400000000000001840000000000000f03f0000000000000040040000' +
-                '00000000000000264000000000000028400000000000002a400000000000002c400000000000002e' +
-                '40000000000000304000000000000026400000000000002840040000000000000000003540000000' +
-                '00000036400000000000003740000000000000384000000000000039400000000000003a40000000' +
-                '00000035400000000000003640');
+            assert.equal(testData.emptyPolygon.geometry.toWkb().toString('hex'), testData.emptyPolygon.wkb);
+            assert.equal(testData.polygon.geometry.toWkb().toString('hex'), testData.polygon.wkb);
+            assert.equal(testData.polygonWithOneInteriorRing.geometry.toWkb().toString('hex'), testData.polygonWithOneInteriorRing.wkb);
+            assert.equal(testData.polygonWithTwoInteriorRings.geometry.toWkb().toString('hex'), testData.polygonWithTwoInteriorRings.wkb);
 		});
 	});
     describe('GeometryCollection', function () {
 		it('toWkt()', function () {
-            assert.equal(new GeometryCollection().toWkt(), 'GEOMETRYCOLLECTION EMPTY');
-			assert.equal(new GeometryCollection([new Point(1, 2)]).toWkt(), 'GEOMETRYCOLLECTION(POINT(1 2))');
-            assert.equal(new GeometryCollection([new Point(1, 2), new LineString([new Point(1, 2), new Point(3, 4)])]).toWkt(),
-                'GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4))');
-            assert.equal(new GeometryCollection([
-                new Point(1, 2),
-                new LineString([new Point(1, 2), new Point(3, 4)]),
-                new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
-                    [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)],
-                    [new Point(21, 22), new Point(23, 24), new Point(25, 26), new Point(21, 22)]])]).toWkt(),
-                'GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4),POLYGON((1 2,3 4,5 6,1 2),(11 12,13 14,15 16,11 12),(21 22,23 24,25 26,21 22)))');
+            assert.equal(testData.emptyGeometryCollection.geometry.toWkt(), testData.emptyGeometryCollection.wkt);
+            assert.equal(testData.geometryCollectionWithPoint.geometry.toWkt(), testData.geometryCollectionWithPoint.wkt);
+            assert.equal(testData.geometryCollectionWithPointAndLineString.geometry.toWkt(), testData.geometryCollectionWithPointAndLineString.wkt);
+            assert.equal(testData.geometryCollectionWithPointAndLineStringAndPolygon.geometry.toWkt(), testData.geometryCollectionWithPointAndLineStringAndPolygon.wkt);
 		});
         it('toWkb()', function () {
-            assert.equal(new GeometryCollection().toWkb().toString('hex'), '010700000000000000');
-			assert.equal(new GeometryCollection([new Point(1, 2)]).toWkb().toString('hex'),
-                '0107000000010000000101000000000000000000f03f0000000000000040');
-            assert.equal(new GeometryCollection([new Point(1, 2), new LineString([new Point(1, 2), new Point(3, 4)])]).toWkb().toString('hex'),
-                '0107000000020000000101000000000000000000f03f000000000000004001020000000200000000' +
-                '0000000000f03f000000000000004000000000000008400000000000001040');
-            assert.equal(new GeometryCollection([
-                new Point(1, 2),
-                new LineString([new Point(1, 2), new Point(3, 4)]),
-                new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
-                    [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)],
-                    [new Point(21, 22), new Point(23, 24), new Point(25, 26), new Point(21, 22)]])]).toWkb().toString('hex'),
-                '0107000000030000000101000000000000000000f03f000000000000004001020000000200000000' +
-                '0000000000f03f000000000000004000000000000008400000000000001040010300000003000000' +
-                '04000000000000000000f03f00000000000000400000000000000840000000000000104000000000' +
-                '000014400000000000001840000000000000f03f0000000000000040040000000000000000002640' +
-                '00000000000028400000000000002a400000000000002c400000000000002e400000000000003040' +
-                '00000000000026400000000000002840040000000000000000003540000000000000364000000000' +
-                '00003740000000000000384000000000000039400000000000003a40000000000000354000000000' +
-                '00003640');
+            assert.equal(testData.emptyGeometryCollection.geometry.toWkb().toString('hex'), testData.emptyGeometryCollection.wkb);
+            assert.equal(testData.geometryCollectionWithPoint.geometry.toWkb().toString('hex'), testData.geometryCollectionWithPoint.wkb);
+            assert.equal(testData.geometryCollectionWithPointAndLineString.geometry.toWkb().toString('hex'), testData.geometryCollectionWithPointAndLineString.wkb);
+            assert.equal(testData.geometryCollectionWithPointAndLineStringAndPolygon.geometry.toWkb().toString('hex'), testData.geometryCollectionWithPointAndLineStringAndPolygon.wkb);
 		});
 	});
 });
