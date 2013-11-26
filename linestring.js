@@ -1,11 +1,26 @@
 module.exports = LineString;
 
 var Types = require('./types');
+var Point = require('./point');
 var BinaryWriter = require('./binarywriter');
 
 function LineString(points) {
     this.points = points || [];
 }
+
+LineString._parseWkt = function (value) {
+};
+
+LineString._parseWkb = function (value) {
+    var lineString = new LineString();
+    
+    var pointCount = value.readInt32();
+    
+    for (var i = 0; i < pointCount; i++)
+        lineString.points.push(new Point(value.readDouble(), value.readDouble()));
+    
+    return lineString;
+};
 
 LineString.prototype.toWkt = function () {
     if (this.points.length === 0)

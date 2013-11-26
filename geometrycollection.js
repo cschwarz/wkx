@@ -1,11 +1,26 @@
 module.exports = GeometryCollection;
 
 var Types = require('./types');
+var Geometry = require('./geometry');
 var BinaryWriter = require('./binarywriter');
 
 function GeometryCollection(geometries) {
     this.geometries = geometries || [];
 }
+
+GeometryCollection._parseWkt = function (value) {
+};
+
+GeometryCollection._parseWkb = function (value) {
+    var geometryCollection = new GeometryCollection();
+
+    var geometryCount = value.readInt32();
+
+    for (var i = 0; i < geometryCount; i++)
+        geometryCollection.geometries.push(Geometry.parse(value));
+
+    return geometryCollection;
+};
 
 GeometryCollection.prototype.toWkt = function () {
     if (this.geometries.length === 0)

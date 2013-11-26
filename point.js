@@ -8,6 +8,13 @@ function Point(x, y) {
     this.y = y;
 }
 
+Point._parseWkt = function (value) {
+};
+
+Point._parseWkb = function (value) {
+    return new Point(value.readDouble(), value.readDouble());
+};
+
 Point.prototype.toWkt = function () {
     if (typeof this.x === 'undefined' && typeof this.y === 'undefined')
         return Types.wkt.Point + ' EMPTY';

@@ -1,12 +1,42 @@
 module.exports = Polygon;
 
 var Types = require('./types');
+var Point = require('./point');
 var BinaryWriter = require('./binarywriter');
 
 function Polygon(exteriorRing, interiorRings) {
     this.exteriorRing = exteriorRing || [];
     this.interiorRings = interiorRings || [];
 }
+
+Polygon._parseWkt = function (value) {
+};
+
+Polygon._parseWkb = function (value) {
+    var polygon = new Polygon();
+
+    var ringCount = value.readInt32();
+
+    if (ringCount > 0) {
+        var exteriorRingCount = value.readInt32();
+
+        for (var i = 0; i < exteriorRingCount; i++)
+            polygon.exteriorRing.push(new Point(value.readDouble(), value.readDouble()));
+
+        for (i = 1; i < ringCount; i++) {
+            var interiorRing = [];
+
+            var interiorRingCount = value.readInt32();
+
+            for (var j = 0; j < interiorRingCount; j++)
+                interiorRing.push(new Point(value.readDouble(), value.readDouble()));
+
+            polygon.interiorRings.push(interiorRing);
+        }
+    }
+
+    return polygon;
+};
 
 Polygon.prototype.toWkt = function () {
     if (this.exteriorRing.length === 0)
