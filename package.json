@@ -1,7 +1,7 @@
 {
   "name": "node-wkx",
   "version": "0.0.1",
-  "description": "",
+  "description": "A WKT/WKB parser and serializer.",
   "main": "wkx.js",
   "directories": {
     "test": "test"
@@ -9,9 +9,21 @@
   "scripts": {
     "test": "mocha"
   },
-  "author": "",
+  "author": "Christian Schwarz",
   "license": "MIT",
   "devDependencies": {
     "mocha": "~1.13.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/cschwarz/node-wkx.git"
+  },
+  "keywords": [
+    "wkt",
+    "wkb",
+    "ogc",
+    "geometry",
+    "geography",
+    "spatial"
+  ]
 }
