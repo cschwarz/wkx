@@ -9,6 +9,20 @@ function GeometryCollection(geometries) {
 }
 
 GeometryCollection._parseWkt = function (value) {
+    var geometryCollection = new GeometryCollection();
+
+    if (value.isMatch(['EMPTY']))
+        return geometryCollection;
+
+    value.expectGroupStart();
+
+    do {
+        geometryCollection.geometries.push(Geometry.parse(value));
+    } while (value.isMatch([',']));
+
+    value.expectGroupEnd();
+
+    return geometryCollection;
 };
 
 GeometryCollection._parseWkb = function (value) {

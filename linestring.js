@@ -9,6 +9,16 @@ function LineString(points) {
 }
 
 LineString._parseWkt = function (value) {
+    var lineString = new LineString();
+
+    if (value.isMatch(['EMPTY']))
+        return lineString;
+
+    value.expectGroupStart();
+    lineString.points.push.apply(lineString.points, value.matchCoordinates());
+    value.expectGroupEnd();
+
+    return lineString;
 };
 
 LineString._parseWkb = function (value) {

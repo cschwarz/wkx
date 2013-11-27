@@ -9,6 +9,7 @@ var MultiLineString = require('./multilinestring');
 var MultiPolygon = require('./multipolygon');
 var GeometryCollection = require('./geometrycollection');
 var BinaryReader = require('./binaryreader');
+var WktParser = require('./wktparser');
 
 function Geometry() {
 }
@@ -16,15 +17,42 @@ function Geometry() {
 Geometry.parse = function (value) {
     var valueType = typeof value;
 
-    if (valueType === 'string')
+    if (valueType === 'string' || value instanceof WktParser)
         return Geometry._parseWkt(value);
-    else if (valueType === 'object' && (value instanceof Buffer || value instanceof BinaryReader))
+    else if (value instanceof Buffer || value instanceof BinaryReader)
         return Geometry._parseWkb(value);
     else
-        throw new Error('first argument must to be a string or Buffer');
+        throw new Error('first argument must be a string or Buffer');
 };
 
 Geometry._parseWkt = function (value) {
+    var wktParser;
+
+    if (value instanceof WktParser)
+        wktParser = value;
+    else
+        wktParser = new WktParser(value);
+
+    var geometryType = wktParser.matchType();
+
+    switch (geometryType) {
+    case Types.wkt.Point:
+        return Point._parseWkt(wktParser);
+    case Types.wkt.LineString:
+        return LineString._parseWkt(wktParser);
+    case Types.wkt.Polygon:
+        return Polygon._parseWkt(wktParser);
+    case Types.wkt.MultiPoint:
+        return MultiPoint._parseWkt(wktParser);
+    case Types.wkt.MultiLineString:
+        return MultiLineString._parseWkt(wktParser);
+    case Types.wkt.MultiPolygon:
+        return MultiPolygon._parseWkt(wktParser);
+    case Types.wkt.GeometryCollection:
+        return GeometryCollection._parseWkt(wktParser);
+    default:
+        throw new Error('GeometryType ' + geometryType + ' not supported');
+    }
 };
 
 Geometry._parseWkb = function (value) {
@@ -54,5 +82,7 @@ Geometry._parseWkb = function (value) {
         return MultiPolygon._parseWkb(binaryReader);
     case Types.wkb.GeometryCollection:
         return GeometryCollection._parseWkb(binaryReader);
+    default:
+        throw new Error('GeometryType ' + geometryType + ' not supported');
     }
 };

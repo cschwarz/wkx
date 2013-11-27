@@ -1,4 +1,5 @@
 var Geometry = require('../geometry');
+var Point = require('../point');
 
 var testData = require('./testdata');
 
@@ -22,6 +23,20 @@ function assertToWkb(data) {
 
 describe('wkx', function () {
     describe('Geometry', function () {
+        it('parse(wkt) - coordinate', function () {
+            assert.deepEqual(Geometry.parse('POINT(1 2)'), new Point(1, 2));
+            assert.deepEqual(Geometry.parse('POINT(1.2 3.4)'), new Point(1.2, 3.4));
+            assert.deepEqual(Geometry.parse('POINT(1 3.4)'), new Point(1, 3.4));
+            assert.deepEqual(Geometry.parse('POINT(1.2 3)'), new Point(1.2, 3));
+
+            assert.deepEqual(Geometry.parse('POINT(-1 -2)'), new Point(-1, -2));
+            assert.deepEqual(Geometry.parse('POINT(-1 2)'), new Point(-1, 2));
+            assert.deepEqual(Geometry.parse('POINT(1 -2)'), new Point(1, -2));
+
+            assert.deepEqual(Geometry.parse('POINT(-1.2 -3.4)'), new Point(-1.2, -3.4));
+            assert.deepEqual(Geometry.parse('POINT(-1.2 3.4)'), new Point(-1.2, 3.4));
+            assert.deepEqual(Geometry.parse('POINT(1.2 -3.4)'), new Point(1.2, -3.4));
+        });
         it('parse(wkt)', function () {
             assertParseWkt(testData.point);
 

@@ -10,6 +10,26 @@ function Polygon(exteriorRing, interiorRings) {
 }
 
 Polygon._parseWkt = function (value) {
+    var polygon = new Polygon();
+
+    if (value.isMatch(['EMPTY']))
+        return polygon;
+
+    value.expectGroupStart();
+
+    value.expectGroupStart();
+    polygon.exteriorRing.push.apply(polygon.exteriorRing, value.matchCoordinates());
+    value.expectGroupEnd();
+
+    while (value.isMatch([','])) {
+        value.expectGroupStart();
+        polygon.interiorRings.push(value.matchCoordinates());
+        value.expectGroupEnd();
+    }
+
+    value.expectGroupEnd();
+
+    return polygon;
 };
 
 Polygon._parseWkb = function (value) {

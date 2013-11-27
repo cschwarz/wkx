@@ -2,6 +2,7 @@ module.exports = MultiPolygon;
 
 var Types = require('./types');
 var Geometry = require('./geometry');
+var Polygon = require('./polygon');
 var BinaryWriter = require('./binarywriter');
 
 function MultiPolygon(polygons) {
@@ -9,6 +10,37 @@ function MultiPolygon(polygons) {
 }
 
 MultiPolygon._parseWkt = function (value) {
+    var multiPolygon = new MultiPolygon();
+
+    if (value.isMatch(['EMPTY']))
+        return multiPolygon;
+
+    value.expectGroupStart();
+
+    do {
+        value.expectGroupStart();
+
+        var polygon = new Polygon();
+
+        value.expectGroupStart();
+        polygon.exteriorRing.push.apply(polygon.exteriorRing, value.matchCoordinates());
+        value.expectGroupEnd();
+
+        while (value.isMatch([','])) {
+            value.expectGroupStart();
+            polygon.interiorRings.push(value.matchCoordinates());
+            value.expectGroupEnd();
+        }
+
+        multiPolygon.polygons.push(polygon);
+
+        value.expectGroupEnd();
+
+    } while (value.isMatch([',']));
+
+    value.expectGroupEnd();
+
+    return multiPolygon;
 };
 
 MultiPolygon._parseWkb = function (value) {

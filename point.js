@@ -9,6 +9,21 @@ function Point(x, y) {
 }
 
 Point._parseWkt = function (value) {
+    var point = new Point();
+
+    if (value.isMatch(['EMPTY']))
+        return point;
+
+    value.expectGroupStart();
+
+    var coordinate = value.matchCoordinate();
+
+    point.x = coordinate.x;
+    point.y = coordinate.y;
+
+    value.expectGroupEnd();
+
+    return point;
 };
 
 Point._parseWkb = function (value) {

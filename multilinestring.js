@@ -2,6 +2,7 @@ module.exports = MultiLineString;
 
 var Types = require('./types');
 var Geometry = require('./geometry');
+var LineString = require('./linestring');
 var BinaryWriter = require('./binarywriter');
 
 function MultiLineString(lineStrings) {
@@ -9,6 +10,22 @@ function MultiLineString(lineStrings) {
 }
 
 MultiLineString._parseWkt = function (value) {
+    var multiLineString = new MultiLineString();
+
+    if (value.isMatch(['EMPTY']))
+        return multiLineString;
+
+    value.expectGroupStart();
+
+    do {
+        value.expectGroupStart();
+        multiLineString.lineStrings.push(new LineString(value.matchCoordinates()));
+        value.expectGroupEnd();
+    } while (value.isMatch([',']));
+
+    value.expectGroupEnd();
+
+    return multiLineString;
 };
 
 MultiLineString._parseWkb = function (value) {

@@ -9,6 +9,16 @@ function MultiPoint(points) {
 }
 
 MultiPoint._parseWkt = function (value) {
+    var multiPoint = new MultiPoint();
+
+    if (value.isMatch(['EMPTY']))
+        return multiPoint;
+
+    value.expectGroupStart();
+    multiPoint.points.push.apply(multiPoint.points, value.matchCoordinates());
+    value.expectGroupEnd();
+
+    return multiPoint;
 };
 
 MultiPoint._parseWkb = function (value) {
