@@ -1,6 +1,6 @@
 {
   "name": "wkx",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A WKT/WKB parser and serializer",
   "main": "lib/wkx.js",
   "scripts": {
