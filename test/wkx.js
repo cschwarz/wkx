@@ -1,5 +1,5 @@
-var Geometry = require('../geometry');
-var Point = require('../point');
+var Geometry = require('../lib/geometry');
+var Point = require('../lib/point');
 
 var testData = require('./testdata');
 

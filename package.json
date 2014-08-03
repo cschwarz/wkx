@@ -1,11 +1,8 @@
 {
   "name": "node-wkx",
   "version": "0.0.1",
-  "description": "A WKT/WKB parser and serializer.",
-  "main": "wkx.js",
-  "directories": {
-    "test": "test"
-  },
+  "description": "A WKT/WKB parser and serializer",
+  "main": "lib/wkx.js",
   "scripts": {
     "test": "mocha"
   },

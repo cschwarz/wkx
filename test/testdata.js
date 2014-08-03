@@ -1,10 +1,10 @@
-var Point = require('../point');
-var LineString = require('../linestring');
-var Polygon = require('../polygon');
-var MultiPoint = require('../multipoint');
-var MultiLineString = require('../multilinestring');
-var MultiPolygon = require('../multipolygon');
-var GeometryCollection = require('../geometrycollection');
+var Point = require('../lib/point');
+var LineString = require('../lib/linestring');
+var Polygon = require('../lib/polygon');
+var MultiPoint = require('../lib/multipoint');
+var MultiLineString = require('../lib/multilinestring');
+var MultiPolygon = require('../lib/multipolygon');
+var GeometryCollection = require('../lib/geometrycollection');
 
 module.exports = {
     emptyPoint: {
@@ -87,7 +87,8 @@ module.exports = {
              '08400000000000001040'
     },
     multiLineStringWithTwoLineStrings: {
-        geometry: new MultiLineString([new LineString([new Point(1, 2), new Point(3, 4)]), new LineString([new Point(5, 6), new Point(7, 8)])]),
+        geometry: new MultiLineString([new LineString([new Point(1, 2), new Point(3, 4)]),
+                                       new LineString([new Point(5, 6), new Point(7, 8)])]),
         wkt: 'MULTILINESTRING((1 2,3 4),(5 6,7 8))',
         wkb: '010500000002000000010200000002000000000000000000f03f0000000000000040000000000000' +
              '08400000000000001040010200000002000000000000000000144000000000000018400000000000' +
@@ -110,7 +111,8 @@ module.exports = {
                   new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
                     [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)],
                     [new Point(21, 22), new Point(23, 24), new Point(25, 26), new Point(21, 22)]])]),
-        wkt: 'MULTIPOLYGON(((1 2,3 4,5 6,1 2)),((1 2,3 4,5 6,1 2),(11 12,13 14,15 16,11 12),(21 22,23 24,25 26,21 22)))',
+        wkt: 'MULTIPOLYGON(((1 2,3 4,5 6,1 2)),((1 2,3 4,5 6,1 2),' + 
+             '(11 12,13 14,15 16,11 12),(21 22,23 24,25 26,21 22)))',
         wkb: '01060000000200000001030000000100000004000000000000000000f03f00000000000000400000' +
              '000000000840000000000000104000000000000014400000000000001840000000000000f03f0000' +
              '00000000004001030000000300000004000000000000000000f03f00000000000000400000000000' +
@@ -143,7 +145,8 @@ module.exports = {
                   new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
                     [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)],
                     [new Point(21, 22), new Point(23, 24), new Point(25, 26), new Point(21, 22)]])]),
-        wkt: 'GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4),POLYGON((1 2,3 4,5 6,1 2),(11 12,13 14,15 16,11 12),(21 22,23 24,25 26,21 22)))',
+        wkt: 'GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4),' + 
+             'POLYGON((1 2,3 4,5 6,1 2),(11 12,13 14,15 16,11 12),(21 22,23 24,25 26,21 22)))',
         wkb: '0107000000030000000101000000000000000000f03f000000000000004001020000000200000000' +
              '0000000000f03f000000000000004000000000000008400000000000001040010300000003000000' +
              '04000000000000000000f03f00000000000000400000000000000840000000000000104000000000' +
