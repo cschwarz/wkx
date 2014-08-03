@@ -1,5 +1,5 @@
 {
-  "name": "node-wkx",
+  "name": "wkx",
   "version": "0.0.1",
   "description": "A WKT/WKB parser and serializer",
   "main": "lib/wkx.js",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/cschwarz/node-wkx.git"
+    "url": "http://github.com/cschwarz/wkx.git"
   },
   "keywords": [
     "wkt",

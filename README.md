@@ -1,4 +1,4 @@
-node-wkx
+wkx
 ========
 
 A WKT/WKB parser and serializer with support for
@@ -14,10 +14,10 @@ A WKT/WKB parser and serializer with support for
 Examples
 --------
 
-The following examples show you how to work with node-wkx.
+The following examples show you how to work with wkx.
 
 ```javascript
-var wkx = require('node-wkx');
+var wkx = require('wkx');
 
 //Parsing a WKT string
 var geometry = wkx.Geometry.parse('POINT(1 2)');
