@@ -1,0 +1,26 @@
+{
+  "name": "wkx",
+  "version": "0.0.3",
+  "description": "A WKT/WKB parser and serializer",
+  "homepage": "https://github.com/cschwarz/wkx",
+  "authors": [
+    "Christian Schwarz <christian.schwarz@refactory.at>"
+  ],
+  "main": "dist/wkx.min.js",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "keywords": [
+    "wkt",
+    "wkb",
+    "ogc",
+    "geometry",
+    "geography",
+    "spatial"
+  ]
+}
