@@ -137,7 +137,7 @@ Geometry._parseWkb = function (value) {
 
     binaryReader.isBigEndian = !binaryReader.readInt8();
 
-    var geometryType = binaryReader.readInt32();
+    var geometryType = binaryReader.readUInt32();
 
     switch (geometryType) {
     case Types.wkb.Point:
@@ -191,7 +191,7 @@ GeometryCollection._parseWkt = function (value) {
 GeometryCollection._parseWkb = function (value) {
     var geometryCollection = new GeometryCollection();
 
-    var geometryCount = value.readInt32();
+    var geometryCount = value.readUInt32();
 
     for (var i = 0; i < geometryCount; i++)
         geometryCollection.geometries.push(Geometry.parse(value));
@@ -219,8 +219,8 @@ GeometryCollection.prototype.toWkb = function () {
 
     wkb.writeInt8(1);
 
-    wkb.writeInt32LE(Types.wkb.GeometryCollection);
-    wkb.writeInt32LE(this.geometries.length);
+    wkb.writeUInt32LE(Types.wkb.GeometryCollection);
+    wkb.writeUInt32LE(this.geometries.length);
 
     for (var i = 0; i < this.geometries.length; i++)
         wkb.writeBuffer(this.geometries[i].toWkb());
@@ -236,6 +236,7 @@ GeometryCollection.prototype._getWkbSize = function () {
 
     return size;
 };
+
 },{"./binarywriter":2,"./geometry":3,"./types":11}],5:[function(require,module,exports){
 module.exports = LineString;
 
@@ -263,7 +264,7 @@ LineString._parseWkt = function (value) {
 LineString._parseWkb = function (value) {
     var lineString = new LineString();
 
-    var pointCount = value.readInt32();
+    var pointCount = value.readUInt32();
 
     for (var i = 0; i < pointCount; i++)
         lineString.points.push(new Point(value.readDouble(), value.readDouble()));
@@ -295,8 +296,8 @@ LineString.prototype.toWkb = function () {
 
     wkb.writeInt8(1);
 
-    wkb.writeInt32LE(Types.wkb.LineString);
-    wkb.writeInt32LE(this.points.length);
+    wkb.writeUInt32LE(Types.wkb.LineString);
+    wkb.writeUInt32LE(this.points.length);
 
     for (var i = 0; i < this.points.length; i++) {
         wkb.writeDoubleLE(this.points[i].x);
@@ -309,6 +310,7 @@ LineString.prototype.toWkb = function () {
 LineString.prototype._getWkbSize = function () {
     return 1 + 4 + 4 + (this.points.length * 16);
 };
+
 },{"./binarywriter":2,"./point":9,"./types":11}],6:[function(require,module,exports){
 module.exports = MultiLineString;
 
@@ -343,7 +345,7 @@ MultiLineString._parseWkt = function (value) {
 MultiLineString._parseWkb = function (value) {
     var multiLineString = new MultiLineString();
 
-    var pointCount = value.readInt32();
+    var pointCount = value.readUInt32();
 
     for (var i = 0; i < pointCount; i++)
         multiLineString.lineStrings.push(Geometry.parse(value));
@@ -371,8 +373,8 @@ MultiLineString.prototype.toWkb = function () {
 
     wkb.writeInt8(1);
 
-    wkb.writeInt32LE(Types.wkb.MultiLineString);
-    wkb.writeInt32LE(this.lineStrings.length);
+    wkb.writeUInt32LE(Types.wkb.MultiLineString);
+    wkb.writeUInt32LE(this.lineStrings.length);
 
     for (var i = 0; i < this.lineStrings.length; i++)
         wkb.writeBuffer(this.lineStrings[i].toWkb());
@@ -388,6 +390,7 @@ MultiLineString.prototype._getWkbSize = function () {
 
     return size;
 };
+
 },{"./binarywriter":2,"./geometry":3,"./linestring":5,"./types":11}],7:[function(require,module,exports){
 module.exports = MultiPoint;
 
@@ -415,7 +418,7 @@ MultiPoint._parseWkt = function (value) {
 MultiPoint._parseWkb = function (value) {
     var multiPoint = new MultiPoint();
 
-    var pointCount = value.readInt32();
+    var pointCount = value.readUInt32();
 
     for (var i = 0; i < pointCount; i++)
         multiPoint.points.push(Geometry.parse(value));
@@ -443,8 +446,8 @@ MultiPoint.prototype.toWkb = function () {
 
     wkb.writeInt8(1);
 
-    wkb.writeInt32LE(Types.wkb.MultiPoint);
-    wkb.writeInt32LE(this.points.length);
+    wkb.writeUInt32LE(Types.wkb.MultiPoint);
+    wkb.writeUInt32LE(this.points.length);
 
     for (var i = 0; i < this.points.length; i++)
         wkb.writeBuffer(this.points[i].toWkb());
@@ -455,6 +458,7 @@ MultiPoint.prototype.toWkb = function () {
 MultiPoint.prototype._getWkbSize = function () {
     return 1 + 4 + 4 + (this.points.length * 21);
 };
+
 },{"./binarywriter":2,"./geometry":3,"./types":11}],8:[function(require,module,exports){
 module.exports = MultiPolygon;
 
@@ -504,7 +508,7 @@ MultiPolygon._parseWkt = function (value) {
 MultiPolygon._parseWkb = function (value) {
     var multiPolygon = new MultiPolygon();
 
-    var polygonCount = value.readInt32();
+    var polygonCount = value.readUInt32();
 
     for (var i = 0; i < polygonCount; i++)
         multiPolygon.polygons.push(Geometry.parse(value));
@@ -532,8 +536,8 @@ MultiPolygon.prototype.toWkb = function () {
 
     wkb.writeInt8(1);
 
-    wkb.writeInt32LE(Types.wkb.MultiPolygon);
-    wkb.writeInt32LE(this.polygons.length);
+    wkb.writeUInt32LE(Types.wkb.MultiPolygon);
+    wkb.writeUInt32LE(this.polygons.length);
 
     for (var i = 0; i < this.polygons.length; i++)
         wkb.writeBuffer(this.polygons[i].toWkb());
@@ -549,6 +553,7 @@ MultiPolygon.prototype._getWkbSize = function () {
 
     return size;
 };
+
 },{"./binarywriter":2,"./geometry":3,"./polygon":10,"./types":11}],9:[function(require,module,exports){
 module.exports = Point;
 
@@ -595,11 +600,11 @@ Point.prototype.toWkb = function () {
     wkb.writeInt8(1);
 
     if (typeof this.x === 'undefined' && typeof this.y === 'undefined') {
-        wkb.writeInt32LE(Types.wkb.MultiPoint);
-        wkb.writeInt32LE(0);
+        wkb.writeUInt32LE(Types.wkb.MultiPoint);
+        wkb.writeUInt32LE(0);
     }
     else {
-        wkb.writeInt32LE(Types.wkb.Point);
+        wkb.writeUInt32LE(Types.wkb.Point);
         wkb.writeDoubleLE(this.x);
         wkb.writeDoubleLE(this.y);
     }
@@ -613,6 +618,7 @@ Point.prototype._getWkbSize = function () {
 
     return 1 + 4 + 8 + 8;
 };
+
 },{"./binarywriter":2,"./types":11}],10:[function(require,module,exports){
 module.exports = Polygon;
 
@@ -651,10 +657,10 @@ Polygon._parseWkt = function (value) {
 Polygon._parseWkb = function (value) {
     var polygon = new Polygon();
 
-    var ringCount = value.readInt32();
+    var ringCount = value.readUInt32();
 
     if (ringCount > 0) {
-        var exteriorRingCount = value.readInt32();
+        var exteriorRingCount = value.readUInt32();
 
         for (var i = 0; i < exteriorRingCount; i++)
             polygon.exteriorRing.push(new Point(value.readDouble(), value.readDouble()));
@@ -662,7 +668,7 @@ Polygon._parseWkb = function (value) {
         for (i = 1; i < ringCount; i++) {
             var interiorRing = [];
 
-            var interiorRingCount = value.readInt32();
+            var interiorRingCount = value.readUInt32();
 
             for (var j = 0; j < interiorRingCount; j++)
                 interiorRing.push(new Point(value.readDouble(), value.readDouble()));
@@ -711,14 +717,14 @@ Polygon.prototype.toWkb = function () {
 
     wkb.writeInt8(1);
 
-    wkb.writeInt32LE(Types.wkb.Polygon);
+    wkb.writeUInt32LE(Types.wkb.Polygon);
 
     if (this.exteriorRing.length > 0) {
-        wkb.writeInt32LE(1 + this.interiorRings.length);
-        wkb.writeInt32LE(this.exteriorRing.length);
+        wkb.writeUInt32LE(1 + this.interiorRings.length);
+        wkb.writeUInt32LE(this.exteriorRing.length);
     }
     else {
-        wkb.writeInt32LE(0);
+        wkb.writeUInt32LE(0);
     }
 
     for (var i = 0; i < this.exteriorRing.length; i++) {
@@ -727,7 +733,7 @@ Polygon.prototype.toWkb = function () {
     }
 
     for (i = 0; i < this.interiorRings.length; i++) {
-        wkb.writeInt32LE(this.interiorRings[i].length);
+        wkb.writeUInt32LE(this.interiorRings[i].length);
 
         for (var j = 0; j < this.interiorRings[i].length; j++) {
             wkb.writeDoubleLE(this.interiorRings[i][j].x);
@@ -749,6 +755,7 @@ Polygon.prototype._getWkbSize = function () {
 
     return size;
 };
+
 },{"./binarywriter":2,"./point":9,"./types":11}],11:[function(require,module,exports){
 module.exports = {
     wkt: {
