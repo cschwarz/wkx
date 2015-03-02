@@ -1,6 +1,6 @@
 {
   "name": "wkx",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A WKT/WKB parser and serializer",
   "homepage": "https://github.com/cschwarz/wkx",
   "authors": [
