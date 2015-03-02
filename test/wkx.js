@@ -38,6 +38,7 @@ describe('wkx', function () {
             assert.deepEqual(Geometry.parse('POINT(1.2 -3.4)'), new Point(1.2, -3.4));
         });
         it('parse(wkt)', function () {
+            assertParseWkt(testData.emptyPoint);
             assertParseWkt(testData.point);
 
             assertParseWkt(testData.emptyLineString);
@@ -92,6 +93,11 @@ describe('wkx', function () {
             assertParseWkb(testData.geometryCollectionWithPoint);
             assertParseWkb(testData.geometryCollectionWithPointAndLineString);
             assertParseWkb(testData.geometryCollectionWithPointAndLineStringAndPolygon);
+        });
+        it('parse() - invalid input', function () {
+            assert.throws(Geometry.parse, /first argument must be a string or Buffer/);
+            assert.throws(function () { Geometry.parse('TEST'); }, /Expected geometry type/);
+            assert.throws(function () { Geometry.parse(new Buffer('010800000000000000', 'hex')); }, /GeometryType 8 not supported/);
         });
     });
 	describe('Point', function () {
