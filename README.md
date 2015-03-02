@@ -1,4 +1,4 @@
-wkx [![Build Status](https://travis-ci.org/cschwarz/wkx.svg?branch=master)](https://travis-ci.org/cschwarz/wkx)
+wkx [![Build Status](https://travis-ci.org/cschwarz/wkx.svg?branch=master)](https://travis-ci.org/cschwarz/wkx) [![Coverage Status](https://coveralls.io/repos/cschwarz/wkx/badge.svg?branch=master)](https://coveralls.io/r/cschwarz/wkx?branch=master)
 ========
 
 A WKT/WKB parser and serializer with support for
