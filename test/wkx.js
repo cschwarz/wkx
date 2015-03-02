@@ -94,6 +94,9 @@ describe('wkx', function () {
             assertParseWkb(testData.geometryCollectionWithPointAndLineString);
             assertParseWkb(testData.geometryCollectionWithPointAndLineStringAndPolygon);
         });
+        it('parse(wkb) - big endian', function () {
+            assertParseWkb(testData.pointBigEndian);
+        });
         it('parse() - invalid input', function () {
             assert.throws(Geometry.parse, /first argument must be a string or Buffer/);
             assert.throws(function () { Geometry.parse('TEST'); }, /Expected geometry type/);
