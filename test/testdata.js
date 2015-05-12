@@ -10,7 +10,8 @@ module.exports = {
     emptyPoint: {
         geometry: new Point(),
         wkt: 'POINT EMPTY',
-        wkb: '010400000000000000'
+        wkb: '010400000000000000',
+        ewkb: '0104000020e610000000000000'
     },
     point: {
         geometry: new Point(1, 2),
@@ -21,7 +22,8 @@ module.exports = {
     pointBigEndian: {
         geometry: new Point(1, 2),
         wkt: 'POINT(1 2)',
-        wkb: '00000000013ff00000000000004000000000000000'
+        wkb: '00000000013ff00000000000004000000000000000',
+        ewkb: '0020000001000010e63ff00000000000004000000000000000'
     },
     emptyLineString: {
         geometry: new LineString(),
