@@ -26,6 +26,11 @@ function assertToWkb(data) {
     assert.equal(data.geometry.toWkb().toString('hex'), data.wkb);
 }
 
+function assertToEwkb(data) {
+    data.geometry.srid = 4326;
+    assert.equal(data.geometry.toEwkb().toString('hex'), data.ewkb);
+}
+
 describe('wkx', function () {
     describe('Geometry', function () {
         it('parse(wkt) - coordinate', function () {
@@ -152,6 +157,10 @@ describe('wkx', function () {
             assertToWkb(testData.emptyPoint);
             assertToWkb(testData.point);
 		});
+        it('toEwkb()', function () {
+            assertToEwkb(testData.emptyPoint);
+            assertToEwkb(testData.point);
+		});
 	});
     describe('LineString', function () {
 		it('toWkt()', function () {
@@ -161,6 +170,10 @@ describe('wkx', function () {
         it('toWkb()', function () {
             assertToWkb(testData.emptyLineString);
             assertToWkb(testData.lineString);
+		});
+        it('toEwkb()', function () {
+            assertToEwkb(testData.emptyLineString);
+            assertToEwkb(testData.lineString);
 		});
 	});
     describe('Polygon', function () {
@@ -176,6 +189,12 @@ describe('wkx', function () {
             assertToWkb(testData.polygonWithOneInteriorRing);
             assertToWkb(testData.polygonWithTwoInteriorRings);
 		});
+        it('toEwkb()', function () {
+            assertToEwkb(testData.emptyPolygon);
+            assertToEwkb(testData.polygon);
+            assertToEwkb(testData.polygonWithOneInteriorRing);
+            assertToEwkb(testData.polygonWithTwoInteriorRings);
+		});
 	});
     describe('MultiPoint', function () {
 		it('toWkt()', function () {
@@ -187,6 +206,11 @@ describe('wkx', function () {
             assertToWkb(testData.emptyMultiPoint);
             assertToWkb(testData.multiPointWithOnePoint);
             assertToWkb(testData.multiPointWithTwoPoints);
+		});
+        it('toEwkb()', function () {
+            assertToEwkb(testData.emptyMultiPoint);
+            assertToEwkb(testData.multiPointWithOnePoint);
+            assertToEwkb(testData.multiPointWithTwoPoints);
 		});
 	});
     describe('MultiLineString', function () {
@@ -200,6 +224,11 @@ describe('wkx', function () {
             assertToWkb(testData.multiLineStringWithOneLineString);
             assertToWkb(testData.multiLineStringWithTwoLineStrings);
 		});
+        it('toEwkb()', function () {
+            assertToEwkb(testData.emptyMultiLineString);
+            assertToEwkb(testData.multiLineStringWithOneLineString);
+            assertToEwkb(testData.multiLineStringWithTwoLineStrings);
+		});
 	});
     describe('MultiPolygon', function () {
 		it('toWkt()', function () {
@@ -211,6 +240,11 @@ describe('wkx', function () {
             assertToWkb(testData.emptyMultiPolygon);
             assertToWkb(testData.multiPolygonWithOnePolygon);
             assertToWkb(testData.multiPolygonWithTwoPolygons);
+		});
+        it('toEwkb()', function () {
+            assertToEwkb(testData.emptyMultiPolygon);
+            assertToEwkb(testData.multiPolygonWithOnePolygon);
+            assertToEwkb(testData.multiPolygonWithTwoPolygons);
 		});
 	});
     describe('GeometryCollection', function () {
@@ -225,6 +259,12 @@ describe('wkx', function () {
             assertToWkb(testData.geometryCollectionWithPoint);
             assertToWkb(testData.geometryCollectionWithPointAndLineString);
             assertToWkb(testData.geometryCollectionWithPointAndLineStringAndPolygon);
+		});
+        it('toEwkb()', function () {
+            assertToEwkb(testData.emptyGeometryCollection);
+            assertToEwkb(testData.geometryCollectionWithPoint);
+            assertToEwkb(testData.geometryCollectionWithPointAndLineString);
+            assertToEwkb(testData.geometryCollectionWithPointAndLineStringAndPolygon);
 		});
 	});
 });
