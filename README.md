@@ -49,7 +49,7 @@ to include it:
 
 You may also use [RawGit][] as a CDN, so you don't need to copy `wkx` into your project:
 ```html
-<script src="https://cdn.rawgit.com/cschwarz/wkx/v0.0.5/dist/wkx.js"></script>
+<script src="https://cdn.rawgit.com/cschwarz/wkx/v0.0.6/dist/wkx.js"></script>
 ```
 
 If you use [browserify][] for your project, you can simply `npm install wkx --save`, and just require `wkx` as usual in

@@ -81,9 +81,11 @@ var MultiLineString = require('./multilinestring');
 var MultiPolygon = require('./multipolygon');
 var GeometryCollection = require('./geometrycollection');
 var BinaryReader = require('./binaryreader');
+var BinaryWriter = require('./binarywriter');
 var WktParser = require('./wktparser');
 
 function Geometry() {
+    this.srid = 0;
 }
 
 Geometry.parse = function (value) {
@@ -128,7 +130,11 @@ Geometry._parseWkt = function (value) {
 };
 
 Geometry._parseWkb = function (value) {
-    var binaryReader;
+    var binaryReader,
+        hasSrid,
+        srid,
+        wkbType,
+        geometryType;
 
     if (value instanceof BinaryReader)
         binaryReader = value;
@@ -137,39 +143,68 @@ Geometry._parseWkb = function (value) {
 
     binaryReader.isBigEndian = !binaryReader.readInt8();
 
-    var geometryType = binaryReader.readUInt32();
+    wkbType = binaryReader.readUInt32();
+    geometryType = wkbType & 0xFF;    
+    
+    hasSrid = (wkbType & 0x20000000) === 0x20000000;
+        
+    if (hasSrid)
+        srid = binaryReader.readUInt32();
+    
+    var options = {
+        srid: srid || 0
+    };
 
     switch (geometryType) {
     case Types.wkb.Point:
-        return Point._parseWkb(binaryReader);
+        return Point._parseWkb(binaryReader, options);
     case Types.wkb.LineString:
-        return LineString._parseWkb(binaryReader);
+        return LineString._parseWkb(binaryReader, options);
     case Types.wkb.Polygon:
-        return Polygon._parseWkb(binaryReader);
+        return Polygon._parseWkb(binaryReader, options);
     case Types.wkb.MultiPoint:
-        return MultiPoint._parseWkb(binaryReader);
+        return MultiPoint._parseWkb(binaryReader, options);
     case Types.wkb.MultiLineString:
-        return MultiLineString._parseWkb(binaryReader);
+        return MultiLineString._parseWkb(binaryReader, options);
     case Types.wkb.MultiPolygon:
-        return MultiPolygon._parseWkb(binaryReader);
+        return MultiPolygon._parseWkb(binaryReader, options);
     case Types.wkb.GeometryCollection:
-        return GeometryCollection._parseWkb(binaryReader);
+        return GeometryCollection._parseWkb(binaryReader, options);
     default:
         throw new Error('GeometryType ' + geometryType + ' not supported');
     }
 };
 
+Geometry.prototype.toEwkb = function () {    
+    var ewkb = new BinaryWriter(this._getWkbSize() + 4);
+    var wkb = this.toWkb();
+    
+    ewkb.writeInt8(1);
+    ewkb.writeUInt32LE(wkb.slice(1, 5).readUInt32LE(0) | 0x20000000);
+    ewkb.writeUInt32LE(this.srid);
+        
+    ewkb.writeBuffer(wkb.slice(5));
+    
+    return ewkb.buffer;
+};
+
 }).call(this,require("buffer").Buffer)
-},{"./binaryreader":1,"./geometrycollection":4,"./linestring":5,"./multilinestring":6,"./multipoint":7,"./multipolygon":8,"./point":9,"./polygon":10,"./types":11,"./wktparser":12,"buffer":"buffer"}],4:[function(require,module,exports){
+},{"./binaryreader":1,"./binarywriter":2,"./geometrycollection":4,"./linestring":5,"./multilinestring":6,"./multipoint":7,"./multipolygon":8,"./point":9,"./polygon":10,"./types":11,"./wktparser":12,"buffer":"buffer"}],4:[function(require,module,exports){
 module.exports = GeometryCollection;
+
+var util = require('util');
 
 var Types = require('./types');
 var Geometry = require('./geometry');
 var BinaryWriter = require('./binarywriter');
 
 function GeometryCollection(geometries) {
+    Geometry.call(this);
+    
     this.geometries = geometries || [];
 }
+
+util.inherits(GeometryCollection, Geometry);
 
 GeometryCollection._parseWkt = function (value) {
     var geometryCollection = new GeometryCollection();
@@ -188,8 +223,9 @@ GeometryCollection._parseWkt = function (value) {
     return geometryCollection;
 };
 
-GeometryCollection._parseWkb = function (value) {
+GeometryCollection._parseWkb = function (value, options) {
     var geometryCollection = new GeometryCollection();
+    geometryCollection.srid = options.srid;
 
     var geometryCount = value.readUInt32();
 
@@ -237,16 +273,23 @@ GeometryCollection.prototype._getWkbSize = function () {
     return size;
 };
 
-},{"./binarywriter":2,"./geometry":3,"./types":11}],5:[function(require,module,exports){
+},{"./binarywriter":2,"./geometry":3,"./types":11,"util":19}],5:[function(require,module,exports){
 module.exports = LineString;
 
+var util = require('util');
+
+var Geometry = require('./geometry');
 var Types = require('./types');
 var Point = require('./point');
 var BinaryWriter = require('./binarywriter');
 
 function LineString(points) {
+    Geometry.call(this);
+    
     this.points = points || [];
 }
+
+util.inherits(LineString, Geometry);
 
 LineString._parseWkt = function (value) {
     var lineString = new LineString();
@@ -261,8 +304,9 @@ LineString._parseWkt = function (value) {
     return lineString;
 };
 
-LineString._parseWkb = function (value) {
+LineString._parseWkb = function (value, options) {
     var lineString = new LineString();
+    lineString.srid = options.srid;
 
     var pointCount = value.readUInt32();
 
@@ -311,8 +355,10 @@ LineString.prototype._getWkbSize = function () {
     return 1 + 4 + 4 + (this.points.length * 16);
 };
 
-},{"./binarywriter":2,"./point":9,"./types":11}],6:[function(require,module,exports){
+},{"./binarywriter":2,"./geometry":3,"./point":9,"./types":11,"util":19}],6:[function(require,module,exports){
 module.exports = MultiLineString;
+
+var util = require('util');
 
 var Types = require('./types');
 var Geometry = require('./geometry');
@@ -320,8 +366,12 @@ var LineString = require('./linestring');
 var BinaryWriter = require('./binarywriter');
 
 function MultiLineString(lineStrings) {
+    Geometry.call(this);
+    
     this.lineStrings = lineStrings || [];
 }
+
+util.inherits(MultiLineString, Geometry);
 
 MultiLineString._parseWkt = function (value) {
     var multiLineString = new MultiLineString();
@@ -342,8 +392,9 @@ MultiLineString._parseWkt = function (value) {
     return multiLineString;
 };
 
-MultiLineString._parseWkb = function (value) {
+MultiLineString._parseWkb = function (value, options) {
     var multiLineString = new MultiLineString();
+    multiLineString.srid = options.srid;
 
     var pointCount = value.readUInt32();
 
@@ -391,16 +442,22 @@ MultiLineString.prototype._getWkbSize = function () {
     return size;
 };
 
-},{"./binarywriter":2,"./geometry":3,"./linestring":5,"./types":11}],7:[function(require,module,exports){
+},{"./binarywriter":2,"./geometry":3,"./linestring":5,"./types":11,"util":19}],7:[function(require,module,exports){
 module.exports = MultiPoint;
+
+var util = require('util');
 
 var Types = require('./types');
 var Geometry = require('./geometry');
 var BinaryWriter = require('./binarywriter');
 
 function MultiPoint(points) {
+    Geometry.call(this);
+    
     this.points = points || [];
 }
+
+util.inherits(MultiPoint, Geometry);
 
 MultiPoint._parseWkt = function (value) {
     var multiPoint = new MultiPoint();
@@ -415,8 +472,9 @@ MultiPoint._parseWkt = function (value) {
     return multiPoint;
 };
 
-MultiPoint._parseWkb = function (value) {
-    var multiPoint = new MultiPoint();
+MultiPoint._parseWkb = function (value, options) {
+    var multiPoint = new MultiPoint(); 
+    multiPoint.srid = options.srid;
 
     var pointCount = value.readUInt32();
 
@@ -459,8 +517,10 @@ MultiPoint.prototype._getWkbSize = function () {
     return 1 + 4 + 4 + (this.points.length * 21);
 };
 
-},{"./binarywriter":2,"./geometry":3,"./types":11}],8:[function(require,module,exports){
+},{"./binarywriter":2,"./geometry":3,"./types":11,"util":19}],8:[function(require,module,exports){
 module.exports = MultiPolygon;
+
+var util = require('util');
 
 var Types = require('./types');
 var Geometry = require('./geometry');
@@ -468,8 +528,12 @@ var Polygon = require('./polygon');
 var BinaryWriter = require('./binarywriter');
 
 function MultiPolygon(polygons) {
+    Geometry.call(this);
+    
     this.polygons = polygons || [];
 }
+
+util.inherits(MultiPolygon, Geometry);
 
 MultiPolygon._parseWkt = function (value) {
     var multiPolygon = new MultiPolygon();
@@ -505,8 +569,9 @@ MultiPolygon._parseWkt = function (value) {
     return multiPolygon;
 };
 
-MultiPolygon._parseWkb = function (value) {
+MultiPolygon._parseWkb = function (value, options) {
     var multiPolygon = new MultiPolygon();
+    multiPolygon.srid = options.srid;
 
     var polygonCount = value.readUInt32();
 
@@ -554,16 +619,23 @@ MultiPolygon.prototype._getWkbSize = function () {
     return size;
 };
 
-},{"./binarywriter":2,"./geometry":3,"./polygon":10,"./types":11}],9:[function(require,module,exports){
+},{"./binarywriter":2,"./geometry":3,"./polygon":10,"./types":11,"util":19}],9:[function(require,module,exports){
 module.exports = Point;
 
+var util = require('util');
+
+var Geometry = require('./geometry');
 var Types = require('./types');
 var BinaryWriter = require('./binarywriter');
 
 function Point(x, y) {
+    Geometry.call(this);
+    
     this.x = x;
     this.y = y;
 }
+
+util.inherits(Point, Geometry);
 
 Point._parseWkt = function (value) {
     var point = new Point();
@@ -583,8 +655,10 @@ Point._parseWkt = function (value) {
     return point;
 };
 
-Point._parseWkb = function (value) {
-    return new Point(value.readDouble(), value.readDouble());
+Point._parseWkb = function (value, options) {
+    var point = new Point(value.readDouble(), value.readDouble());
+    point.srid = options.srid;
+    return point;
 };
 
 Point.prototype.toWkt = function () {
@@ -619,17 +693,24 @@ Point.prototype._getWkbSize = function () {
     return 1 + 4 + 8 + 8;
 };
 
-},{"./binarywriter":2,"./types":11}],10:[function(require,module,exports){
+},{"./binarywriter":2,"./geometry":3,"./types":11,"util":19}],10:[function(require,module,exports){
 module.exports = Polygon;
 
+var util = require('util');
+
+var Geometry = require('./geometry');
 var Types = require('./types');
 var Point = require('./point');
 var BinaryWriter = require('./binarywriter');
 
 function Polygon(exteriorRing, interiorRings) {
+    Geometry.call(this);
+    
     this.exteriorRing = exteriorRing || [];
     this.interiorRings = interiorRings || [];
 }
+
+util.inherits(Polygon, Geometry);
 
 Polygon._parseWkt = function (value) {
     var polygon = new Polygon();
@@ -654,8 +735,9 @@ Polygon._parseWkt = function (value) {
     return polygon;
 };
 
-Polygon._parseWkb = function (value) {
+Polygon._parseWkb = function (value, options) {
     var polygon = new Polygon();
+    polygon.srid = options.srid;
 
     var ringCount = value.readUInt32();
 
@@ -756,7 +838,7 @@ Polygon.prototype._getWkbSize = function () {
     return size;
 };
 
-},{"./binarywriter":2,"./point":9,"./types":11}],11:[function(require,module,exports){
+},{"./binarywriter":2,"./geometry":3,"./point":9,"./types":11,"util":19}],11:[function(require,module,exports){
 module.exports = {
     wkt: {
         Point: 'POINT',
@@ -1120,7 +1202,688 @@ module.exports = isArray || function (val) {
   return !! val && '[object Array]' == str.call(val);
 };
 
-},{}],"buffer":[function(require,module,exports){
+},{}],16:[function(require,module,exports){
+if (typeof Object.create === 'function') {
+  // implementation from standard node.js 'util' module
+  module.exports = function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor
+    ctor.prototype = Object.create(superCtor.prototype, {
+      constructor: {
+        value: ctor,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+  };
+} else {
+  // old school shim for old browsers
+  module.exports = function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor
+    var TempCtor = function () {}
+    TempCtor.prototype = superCtor.prototype
+    ctor.prototype = new TempCtor()
+    ctor.prototype.constructor = ctor
+  }
+}
+
+},{}],17:[function(require,module,exports){
+// shim for using process in browser
+
+var process = module.exports = {};
+var queue = [];
+var draining = false;
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    draining = true;
+    var currentQueue;
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        var i = -1;
+        while (++i < len) {
+            currentQueue[i]();
+        }
+        len = queue.length;
+    }
+    draining = false;
+}
+process.nextTick = function (fun) {
+    queue.push(fun);
+    if (!draining) {
+        setTimeout(drainQueue, 0);
+    }
+};
+
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+// TODO(shtylman)
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+},{}],18:[function(require,module,exports){
+module.exports = function isBuffer(arg) {
+  return arg && typeof arg === 'object'
+    && typeof arg.copy === 'function'
+    && typeof arg.fill === 'function'
+    && typeof arg.readUInt8 === 'function';
+}
+},{}],19:[function(require,module,exports){
+(function (process,global){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+var formatRegExp = /%[sdj%]/g;
+exports.format = function(f) {
+  if (!isString(f)) {
+    var objects = [];
+    for (var i = 0; i < arguments.length; i++) {
+      objects.push(inspect(arguments[i]));
+    }
+    return objects.join(' ');
+  }
+
+  var i = 1;
+  var args = arguments;
+  var len = args.length;
+  var str = String(f).replace(formatRegExp, function(x) {
+    if (x === '%%') return '%';
+    if (i >= len) return x;
+    switch (x) {
+      case '%s': return String(args[i++]);
+      case '%d': return Number(args[i++]);
+      case '%j':
+        try {
+          return JSON.stringify(args[i++]);
+        } catch (_) {
+          return '[Circular]';
+        }
+      default:
+        return x;
+    }
+  });
+  for (var x = args[i]; i < len; x = args[++i]) {
+    if (isNull(x) || !isObject(x)) {
+      str += ' ' + x;
+    } else {
+      str += ' ' + inspect(x);
+    }
+  }
+  return str;
+};
+
+
+// Mark that a method should not be used.
+// Returns a modified function which warns once by default.
+// If --no-deprecation is set, then it is a no-op.
+exports.deprecate = function(fn, msg) {
+  // Allow for deprecating things in the process of starting up.
+  if (isUndefined(global.process)) {
+    return function() {
+      return exports.deprecate(fn, msg).apply(this, arguments);
+    };
+  }
+
+  if (process.noDeprecation === true) {
+    return fn;
+  }
+
+  var warned = false;
+  function deprecated() {
+    if (!warned) {
+      if (process.throwDeprecation) {
+        throw new Error(msg);
+      } else if (process.traceDeprecation) {
+        console.trace(msg);
+      } else {
+        console.error(msg);
+      }
+      warned = true;
+    }
+    return fn.apply(this, arguments);
+  }
+
+  return deprecated;
+};
+
+
+var debugs = {};
+var debugEnviron;
+exports.debuglog = function(set) {
+  if (isUndefined(debugEnviron))
+    debugEnviron = process.env.NODE_DEBUG || '';
+  set = set.toUpperCase();
+  if (!debugs[set]) {
+    if (new RegExp('\\b' + set + '\\b', 'i').test(debugEnviron)) {
+      var pid = process.pid;
+      debugs[set] = function() {
+        var msg = exports.format.apply(exports, arguments);
+        console.error('%s %d: %s', set, pid, msg);
+      };
+    } else {
+      debugs[set] = function() {};
+    }
+  }
+  return debugs[set];
+};
+
+
+/**
+ * Echos the value of a value. Trys to print the value out
+ * in the best way possible given the different types.
+ *
+ * @param {Object} obj The object to print out.
+ * @param {Object} opts Optional options object that alters the output.
+ */
+/* legacy: obj, showHidden, depth, colors*/
+function inspect(obj, opts) {
+  // default options
+  var ctx = {
+    seen: [],
+    stylize: stylizeNoColor
+  };
+  // legacy...
+  if (arguments.length >= 3) ctx.depth = arguments[2];
+  if (arguments.length >= 4) ctx.colors = arguments[3];
+  if (isBoolean(opts)) {
+    // legacy...
+    ctx.showHidden = opts;
+  } else if (opts) {
+    // got an "options" object
+    exports._extend(ctx, opts);
+  }
+  // set default options
+  if (isUndefined(ctx.showHidden)) ctx.showHidden = false;
+  if (isUndefined(ctx.depth)) ctx.depth = 2;
+  if (isUndefined(ctx.colors)) ctx.colors = false;
+  if (isUndefined(ctx.customInspect)) ctx.customInspect = true;
+  if (ctx.colors) ctx.stylize = stylizeWithColor;
+  return formatValue(ctx, obj, ctx.depth);
+}
+exports.inspect = inspect;
+
+
+// http://en.wikipedia.org/wiki/ANSI_escape_code#graphics
+inspect.colors = {
+  'bold' : [1, 22],
+  'italic' : [3, 23],
+  'underline' : [4, 24],
+  'inverse' : [7, 27],
+  'white' : [37, 39],
+  'grey' : [90, 39],
+  'black' : [30, 39],
+  'blue' : [34, 39],
+  'cyan' : [36, 39],
+  'green' : [32, 39],
+  'magenta' : [35, 39],
+  'red' : [31, 39],
+  'yellow' : [33, 39]
+};
+
+// Don't use 'blue' not visible on cmd.exe
+inspect.styles = {
+  'special': 'cyan',
+  'number': 'yellow',
+  'boolean': 'yellow',
+  'undefined': 'grey',
+  'null': 'bold',
+  'string': 'green',
+  'date': 'magenta',
+  // "name": intentionally not styling
+  'regexp': 'red'
+};
+
+
+function stylizeWithColor(str, styleType) {
+  var style = inspect.styles[styleType];
+
+  if (style) {
+    return '\u001b[' + inspect.colors[style][0] + 'm' + str +
+           '\u001b[' + inspect.colors[style][1] + 'm';
+  } else {
+    return str;
+  }
+}
+
+
+function stylizeNoColor(str, styleType) {
+  return str;
+}
+
+
+function arrayToHash(array) {
+  var hash = {};
+
+  array.forEach(function(val, idx) {
+    hash[val] = true;
+  });
+
+  return hash;
+}
+
+
+function formatValue(ctx, value, recurseTimes) {
+  // Provide a hook for user-specified inspect functions.
+  // Check that value is an object with an inspect function on it
+  if (ctx.customInspect &&
+      value &&
+      isFunction(value.inspect) &&
+      // Filter out the util module, it's inspect function is special
+      value.inspect !== exports.inspect &&
+      // Also filter out any prototype objects using the circular check.
+      !(value.constructor && value.constructor.prototype === value)) {
+    var ret = value.inspect(recurseTimes, ctx);
+    if (!isString(ret)) {
+      ret = formatValue(ctx, ret, recurseTimes);
+    }
+    return ret;
+  }
+
+  // Primitive types cannot have properties
+  var primitive = formatPrimitive(ctx, value);
+  if (primitive) {
+    return primitive;
+  }
+
+  // Look up the keys of the object.
+  var keys = Object.keys(value);
+  var visibleKeys = arrayToHash(keys);
+
+  if (ctx.showHidden) {
+    keys = Object.getOwnPropertyNames(value);
+  }
+
+  // IE doesn't make error fields non-enumerable
+  // http://msdn.microsoft.com/en-us/library/ie/dww52sbt(v=vs.94).aspx
+  if (isError(value)
+      && (keys.indexOf('message') >= 0 || keys.indexOf('description') >= 0)) {
+    return formatError(value);
+  }
+
+  // Some type of object without properties can be shortcutted.
+  if (keys.length === 0) {
+    if (isFunction(value)) {
+      var name = value.name ? ': ' + value.name : '';
+      return ctx.stylize('[Function' + name + ']', 'special');
+    }
+    if (isRegExp(value)) {
+      return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
+    }
+    if (isDate(value)) {
+      return ctx.stylize(Date.prototype.toString.call(value), 'date');
+    }
+    if (isError(value)) {
+      return formatError(value);
+    }
+  }
+
+  var base = '', array = false, braces = ['{', '}'];
+
+  // Make Array say that they are Array
+  if (isArray(value)) {
+    array = true;
+    braces = ['[', ']'];
+  }
+
+  // Make functions say that they are functions
+  if (isFunction(value)) {
+    var n = value.name ? ': ' + value.name : '';
+    base = ' [Function' + n + ']';
+  }
+
+  // Make RegExps say that they are RegExps
+  if (isRegExp(value)) {
+    base = ' ' + RegExp.prototype.toString.call(value);
+  }
+
+  // Make dates with properties first say the date
+  if (isDate(value)) {
+    base = ' ' + Date.prototype.toUTCString.call(value);
+  }
+
+  // Make error with message first say the error
+  if (isError(value)) {
+    base = ' ' + formatError(value);
+  }
+
+  if (keys.length === 0 && (!array || value.length == 0)) {
+    return braces[0] + base + braces[1];
+  }
+
+  if (recurseTimes < 0) {
+    if (isRegExp(value)) {
+      return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
+    } else {
+      return ctx.stylize('[Object]', 'special');
+    }
+  }
+
+  ctx.seen.push(value);
+
+  var output;
+  if (array) {
+    output = formatArray(ctx, value, recurseTimes, visibleKeys, keys);
+  } else {
+    output = keys.map(function(key) {
+      return formatProperty(ctx, value, recurseTimes, visibleKeys, key, array);
+    });
+  }
+
+  ctx.seen.pop();
+
+  return reduceToSingleString(output, base, braces);
+}
+
+
+function formatPrimitive(ctx, value) {
+  if (isUndefined(value))
+    return ctx.stylize('undefined', 'undefined');
+  if (isString(value)) {
+    var simple = '\'' + JSON.stringify(value).replace(/^"|"$/g, '')
+                                             .replace(/'/g, "\\'")
+                                             .replace(/\\"/g, '"') + '\'';
+    return ctx.stylize(simple, 'string');
+  }
+  if (isNumber(value))
+    return ctx.stylize('' + value, 'number');
+  if (isBoolean(value))
+    return ctx.stylize('' + value, 'boolean');
+  // For some reason typeof null is "object", so special case here.
+  if (isNull(value))
+    return ctx.stylize('null', 'null');
+}
+
+
+function formatError(value) {
+  return '[' + Error.prototype.toString.call(value) + ']';
+}
+
+
+function formatArray(ctx, value, recurseTimes, visibleKeys, keys) {
+  var output = [];
+  for (var i = 0, l = value.length; i < l; ++i) {
+    if (hasOwnProperty(value, String(i))) {
+      output.push(formatProperty(ctx, value, recurseTimes, visibleKeys,
+          String(i), true));
+    } else {
+      output.push('');
+    }
+  }
+  keys.forEach(function(key) {
+    if (!key.match(/^\d+$/)) {
+      output.push(formatProperty(ctx, value, recurseTimes, visibleKeys,
+          key, true));
+    }
+  });
+  return output;
+}
+
+
+function formatProperty(ctx, value, recurseTimes, visibleKeys, key, array) {
+  var name, str, desc;
+  desc = Object.getOwnPropertyDescriptor(value, key) || { value: value[key] };
+  if (desc.get) {
+    if (desc.set) {
+      str = ctx.stylize('[Getter/Setter]', 'special');
+    } else {
+      str = ctx.stylize('[Getter]', 'special');
+    }
+  } else {
+    if (desc.set) {
+      str = ctx.stylize('[Setter]', 'special');
+    }
+  }
+  if (!hasOwnProperty(visibleKeys, key)) {
+    name = '[' + key + ']';
+  }
+  if (!str) {
+    if (ctx.seen.indexOf(desc.value) < 0) {
+      if (isNull(recurseTimes)) {
+        str = formatValue(ctx, desc.value, null);
+      } else {
+        str = formatValue(ctx, desc.value, recurseTimes - 1);
+      }
+      if (str.indexOf('\n') > -1) {
+        if (array) {
+          str = str.split('\n').map(function(line) {
+            return '  ' + line;
+          }).join('\n').substr(2);
+        } else {
+          str = '\n' + str.split('\n').map(function(line) {
+            return '   ' + line;
+          }).join('\n');
+        }
+      }
+    } else {
+      str = ctx.stylize('[Circular]', 'special');
+    }
+  }
+  if (isUndefined(name)) {
+    if (array && key.match(/^\d+$/)) {
+      return str;
+    }
+    name = JSON.stringify('' + key);
+    if (name.match(/^"([a-zA-Z_][a-zA-Z_0-9]*)"$/)) {
+      name = name.substr(1, name.length - 2);
+      name = ctx.stylize(name, 'name');
+    } else {
+      name = name.replace(/'/g, "\\'")
+                 .replace(/\\"/g, '"')
+                 .replace(/(^"|"$)/g, "'");
+      name = ctx.stylize(name, 'string');
+    }
+  }
+
+  return name + ': ' + str;
+}
+
+
+function reduceToSingleString(output, base, braces) {
+  var numLinesEst = 0;
+  var length = output.reduce(function(prev, cur) {
+    numLinesEst++;
+    if (cur.indexOf('\n') >= 0) numLinesEst++;
+    return prev + cur.replace(/\u001b\[\d\d?m/g, '').length + 1;
+  }, 0);
+
+  if (length > 60) {
+    return braces[0] +
+           (base === '' ? '' : base + '\n ') +
+           ' ' +
+           output.join(',\n  ') +
+           ' ' +
+           braces[1];
+  }
+
+  return braces[0] + base + ' ' + output.join(', ') + ' ' + braces[1];
+}
+
+
+// NOTE: These type checking functions intentionally don't use `instanceof`
+// because it is fragile and can be easily faked with `Object.create()`.
+function isArray(ar) {
+  return Array.isArray(ar);
+}
+exports.isArray = isArray;
+
+function isBoolean(arg) {
+  return typeof arg === 'boolean';
+}
+exports.isBoolean = isBoolean;
+
+function isNull(arg) {
+  return arg === null;
+}
+exports.isNull = isNull;
+
+function isNullOrUndefined(arg) {
+  return arg == null;
+}
+exports.isNullOrUndefined = isNullOrUndefined;
+
+function isNumber(arg) {
+  return typeof arg === 'number';
+}
+exports.isNumber = isNumber;
+
+function isString(arg) {
+  return typeof arg === 'string';
+}
+exports.isString = isString;
+
+function isSymbol(arg) {
+  return typeof arg === 'symbol';
+}
+exports.isSymbol = isSymbol;
+
+function isUndefined(arg) {
+  return arg === void 0;
+}
+exports.isUndefined = isUndefined;
+
+function isRegExp(re) {
+  return isObject(re) && objectToString(re) === '[object RegExp]';
+}
+exports.isRegExp = isRegExp;
+
+function isObject(arg) {
+  return typeof arg === 'object' && arg !== null;
+}
+exports.isObject = isObject;
+
+function isDate(d) {
+  return isObject(d) && objectToString(d) === '[object Date]';
+}
+exports.isDate = isDate;
+
+function isError(e) {
+  return isObject(e) &&
+      (objectToString(e) === '[object Error]' || e instanceof Error);
+}
+exports.isError = isError;
+
+function isFunction(arg) {
+  return typeof arg === 'function';
+}
+exports.isFunction = isFunction;
+
+function isPrimitive(arg) {
+  return arg === null ||
+         typeof arg === 'boolean' ||
+         typeof arg === 'number' ||
+         typeof arg === 'string' ||
+         typeof arg === 'symbol' ||  // ES6 symbol
+         typeof arg === 'undefined';
+}
+exports.isPrimitive = isPrimitive;
+
+exports.isBuffer = require('./support/isBuffer');
+
+function objectToString(o) {
+  return Object.prototype.toString.call(o);
+}
+
+
+function pad(n) {
+  return n < 10 ? '0' + n.toString(10) : n.toString(10);
+}
+
+
+var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
+              'Oct', 'Nov', 'Dec'];
+
+// 26 Feb 16:19:34
+function timestamp() {
+  var d = new Date();
+  var time = [pad(d.getHours()),
+              pad(d.getMinutes()),
+              pad(d.getSeconds())].join(':');
+  return [d.getDate(), months[d.getMonth()], time].join(' ');
+}
+
+
+// log is just a thin wrapper to console.log that prepends a timestamp
+exports.log = function() {
+  console.log('%s - %s', timestamp(), exports.format.apply(exports, arguments));
+};
+
+
+/**
+ * Inherit the prototype methods from one constructor into another.
+ *
+ * The Function.prototype.inherits from lang.js rewritten as a standalone
+ * function (not on Function.prototype). NOTE: If this file is to be loaded
+ * during bootstrapping this function needs to be rewritten using some native
+ * functions as prototype setup using normal JavaScript does not work as
+ * expected during bootstrapping (see mirror.js in r114903).
+ *
+ * @param {function} ctor Constructor function which needs to inherit the
+ *     prototype.
+ * @param {function} superCtor Constructor function to inherit prototype from.
+ */
+exports.inherits = require('inherits');
+
+exports._extend = function(origin, add) {
+  // Don't do anything if add isn't an object
+  if (!add || !isObject(add)) return origin;
+
+  var keys = Object.keys(add);
+  var i = keys.length;
+  while (i--) {
+    origin[keys[i]] = add[keys[i]];
+  }
+  return origin;
+};
+
+function hasOwnProperty(obj, prop) {
+  return Object.prototype.hasOwnProperty.call(obj, prop);
+}
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./support/isBuffer":18,"_process":17,"inherits":16}],"buffer":[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *

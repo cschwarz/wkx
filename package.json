@@ -1,7 +1,7 @@
 {
   "name": "wkx",
-  "version": "0.0.5",
-  "description": "A WKT/WKB parser and serializer",
+  "version": "0.0.6",
+  "description": "A WKT/WKB/EWKB parser and serializer",
   "main": "lib/wkx.js",
   "scripts": {
     "test": "mocha",
@@ -28,6 +28,7 @@
   "keywords": [
     "wkt",
     "wkb",
+    "ewkb",
     "ogc",
     "geometry",
     "geography",
