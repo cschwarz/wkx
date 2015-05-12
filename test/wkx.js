@@ -14,6 +14,7 @@ function assertParseWkb(data) {
 }
 
 function assertParseEwkb(data) {
+    data.geometry.srid = 4326;
     assert.deepEqual(Geometry.parse(new Buffer(data.ewkb, 'hex'), true), data.geometry);
 }
 
