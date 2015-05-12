@@ -13,6 +13,10 @@ function assertParseWkb(data) {
     assert.deepEqual(Geometry.parse(new Buffer(data.wkb, 'hex')), data.geometry);
 }
 
+function assertParseEwkb(data) {
+    assert.deepEqual(Geometry.parse(new Buffer(data.ewkb, 'hex'), true), data.geometry);
+}
+
 function assertToWkt(data) {
     assert.equal(data.geometry.toWkt(), data.wkt);
 }
@@ -93,6 +97,34 @@ describe('wkx', function () {
             assertParseWkb(testData.geometryCollectionWithPoint);
             assertParseWkb(testData.geometryCollectionWithPointAndLineString);
             assertParseWkb(testData.geometryCollectionWithPointAndLineStringAndPolygon);
+        });
+        it('parse(ewkb)', function () {
+            assertParseEwkb(testData.point);
+
+            assertParseEwkb(testData.emptyLineString);
+            assertParseEwkb(testData.lineString);
+
+            assertParseEwkb(testData.emptyPolygon);
+            assertParseEwkb(testData.polygon);
+            assertParseEwkb(testData.polygonWithOneInteriorRing);
+            assertParseEwkb(testData.polygonWithTwoInteriorRings);
+
+            assertParseEwkb(testData.emptyMultiPoint);
+            assertParseEwkb(testData.multiPointWithOnePoint);
+            assertParseEwkb(testData.multiPointWithTwoPoints);
+
+            assertParseEwkb(testData.emptyMultiLineString);
+            assertParseEwkb(testData.multiLineStringWithOneLineString);
+            assertParseEwkb(testData.multiLineStringWithTwoLineStrings);
+
+            assertParseEwkb(testData.emptyMultiPolygon);
+            assertParseEwkb(testData.multiPolygonWithOnePolygon);
+            assertParseEwkb(testData.multiPolygonWithTwoPolygons);
+
+            assertParseEwkb(testData.emptyGeometryCollection);
+            assertParseEwkb(testData.geometryCollectionWithPoint);
+            assertParseEwkb(testData.geometryCollectionWithPointAndLineString);
+            assertParseEwkb(testData.geometryCollectionWithPointAndLineStringAndPolygon);
         });
         it('parse(wkb) - big endian', function () {
             assertParseWkb(testData.pointBigEndian);
