@@ -33,6 +33,9 @@ var wktString = new wkx.Point(1, 2).toWkt();
 
 //Serializing a Point geometry to WKB
 var wkbBuffer = new wkx.Point(1, 2).toWkb();
+
+//Serializing a Point geometry to EWKB
+var ewkbBuffer = new wkx.Point(1, 2).toEwkb();
 ```
 
 Browser
