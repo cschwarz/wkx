@@ -13,6 +13,11 @@ function assertParseWkb(data) {
     assert.deepEqual(Geometry.parse(new Buffer(data.wkb, 'hex')), data.geometry);
 }
 
+function assertParseEwkt(data) {
+    data.geometry.srid = 4326;
+    assert.deepEqual(Geometry.parse('SRID=4326;' + data.wkt), data.geometry);
+}
+
 function assertParseEwkb(data) {
     data.geometry.srid = 4326;
     assert.deepEqual(Geometry.parse(new Buffer(data.ewkb, 'hex')), data.geometry);
@@ -24,6 +29,11 @@ function assertToWkt(data) {
 
 function assertToWkb(data) {
     assert.equal(data.geometry.toWkb().toString('hex'), data.wkb);
+}
+
+function assertToEwkt(data) {
+    data.geometry.srid = 4326;
+    assert.equal(data.geometry.toEwkt(), 'SRID=4326;' + data.wkt);
 }
 
 function assertToEwkb(data) {
@@ -104,6 +114,35 @@ describe('wkx', function () {
             assertParseWkb(testData.geometryCollectionWithPointAndLineString);
             assertParseWkb(testData.geometryCollectionWithPointAndLineStringAndPolygon);
         });
+        it('parse(ewkt)', function () {
+            assertParseEwkt(testData.emptyPoint);
+            assertParseEwkt(testData.point);
+
+            assertParseEwkt(testData.emptyLineString);
+            assertParseEwkt(testData.lineString);
+
+            assertParseEwkt(testData.emptyPolygon);
+            assertParseEwkt(testData.polygon);
+            assertParseEwkt(testData.polygonWithOneInteriorRing);
+            assertParseEwkt(testData.polygonWithTwoInteriorRings);
+
+            assertParseEwkt(testData.emptyMultiPoint);
+            assertParseEwkt(testData.multiPointWithOnePoint);
+            assertParseEwkt(testData.multiPointWithTwoPoints);
+
+            assertParseEwkt(testData.emptyMultiLineString);
+            assertParseEwkt(testData.multiLineStringWithOneLineString);
+            assertParseEwkt(testData.multiLineStringWithTwoLineStrings);
+
+            assertParseEwkt(testData.emptyMultiPolygon);
+            assertParseEwkt(testData.multiPolygonWithOnePolygon);
+            assertParseEwkt(testData.multiPolygonWithTwoPolygons);
+
+            assertParseEwkt(testData.emptyGeometryCollection);
+            assertParseEwkt(testData.geometryCollectionWithPoint);
+            assertParseEwkt(testData.geometryCollectionWithPointAndLineString);
+            assertParseEwkt(testData.geometryCollectionWithPointAndLineStringAndPolygon);
+        });
         it('parse(ewkb)', function () {
             assertParseEwkb(testData.point);
 
@@ -157,6 +196,10 @@ describe('wkx', function () {
             assertToWkb(testData.emptyPoint);
             assertToWkb(testData.point);
 		});
+        it('toEwkt()', function () {
+            assertToEwkt(testData.emptyPoint);
+            assertToEwkt(testData.point);
+		});
         it('toEwkb()', function () {
             assertToEwkb(testData.emptyPoint);
             assertToEwkb(testData.point);
@@ -170,6 +213,10 @@ describe('wkx', function () {
         it('toWkb()', function () {
             assertToWkb(testData.emptyLineString);
             assertToWkb(testData.lineString);
+		});
+        it('toEwkt()', function () {
+            assertToEwkt(testData.emptyLineString);
+            assertToEwkt(testData.lineString);
 		});
         it('toEwkb()', function () {
             assertToEwkb(testData.emptyLineString);
@@ -189,6 +236,12 @@ describe('wkx', function () {
             assertToWkb(testData.polygonWithOneInteriorRing);
             assertToWkb(testData.polygonWithTwoInteriorRings);
 		});
+        it('toEwkt()', function () {
+            assertToEwkt(testData.emptyPolygon);
+            assertToEwkt(testData.polygon);
+            assertToEwkt(testData.polygonWithOneInteriorRing);
+            assertToEwkt(testData.polygonWithTwoInteriorRings);
+		});
         it('toEwkb()', function () {
             assertToEwkb(testData.emptyPolygon);
             assertToEwkb(testData.polygon);
@@ -207,6 +260,11 @@ describe('wkx', function () {
             assertToWkb(testData.multiPointWithOnePoint);
             assertToWkb(testData.multiPointWithTwoPoints);
 		});
+        it('toEwkt()', function () {
+            assertToEwkt(testData.emptyMultiPoint);
+            assertToEwkt(testData.multiPointWithOnePoint);
+            assertToEwkt(testData.multiPointWithTwoPoints);
+		});
         it('toEwkb()', function () {
             assertToEwkb(testData.emptyMultiPoint);
             assertToEwkb(testData.multiPointWithOnePoint);
@@ -224,6 +282,11 @@ describe('wkx', function () {
             assertToWkb(testData.multiLineStringWithOneLineString);
             assertToWkb(testData.multiLineStringWithTwoLineStrings);
 		});
+        it('toEwkt()', function () {
+            assertToEwkt(testData.emptyMultiLineString);
+            assertToEwkt(testData.multiLineStringWithOneLineString);
+            assertToEwkt(testData.multiLineStringWithTwoLineStrings);
+		});
         it('toEwkb()', function () {
             assertToEwkb(testData.emptyMultiLineString);
             assertToEwkb(testData.multiLineStringWithOneLineString);
@@ -240,6 +303,11 @@ describe('wkx', function () {
             assertToWkb(testData.emptyMultiPolygon);
             assertToWkb(testData.multiPolygonWithOnePolygon);
             assertToWkb(testData.multiPolygonWithTwoPolygons);
+		});
+        it('toEwkt()', function () {
+            assertToEwkt(testData.emptyMultiPolygon);
+            assertToEwkt(testData.multiPolygonWithOnePolygon);
+            assertToEwkt(testData.multiPolygonWithTwoPolygons);
 		});
         it('toEwkb()', function () {
             assertToEwkb(testData.emptyMultiPolygon);
@@ -259,6 +327,12 @@ describe('wkx', function () {
             assertToWkb(testData.geometryCollectionWithPoint);
             assertToWkb(testData.geometryCollectionWithPointAndLineString);
             assertToWkb(testData.geometryCollectionWithPointAndLineStringAndPolygon);
+		});
+        it('toEwkt()', function () {
+            assertToEwkt(testData.emptyGeometryCollection);
+            assertToEwkt(testData.geometryCollectionWithPoint);
+            assertToEwkt(testData.geometryCollectionWithPointAndLineString);
+            assertToEwkt(testData.geometryCollectionWithPointAndLineStringAndPolygon);
 		});
         it('toEwkb()', function () {
             assertToEwkb(testData.emptyGeometryCollection);
