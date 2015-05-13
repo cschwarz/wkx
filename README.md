@@ -1,7 +1,7 @@
 wkx [![Build Status](https://travis-ci.org/cschwarz/wkx.svg?branch=master)](https://travis-ci.org/cschwarz/wkx) [![Coverage Status](https://coveralls.io/repos/cschwarz/wkx/badge.svg?branch=master)](https://coveralls.io/r/cschwarz/wkx?branch=master)
 ========
 
-A WKT/WKB/EWKB parser and serializer with support for
+A WKT/WKB/EWKT/EWKB parser and serializer with support for
 
 - Point
 - LineString
@@ -22,6 +22,9 @@ var wkx = require('wkx');
 //Parsing a WKT string
 var geometry = wkx.Geometry.parse('POINT(1 2)');
 
+//Parsing an EWKT string
+var geometry = wkx.Geometry.parse('SRID=4326;POINT(1 2)');
+
 //Parsing a node Buffer containing a WKB object
 var geometry = wkx.Geometry.parse(wkbBuffer);
 
@@ -33,6 +36,9 @@ var wktString = new wkx.Point(1, 2).toWkt();
 
 //Serializing a Point geometry to WKB
 var wkbBuffer = new wkx.Point(1, 2).toWkb();
+
+//Serializing a Point geometry to EWKT
+var ewktString = new wkx.Point(1, 2).toEwkt();
 
 //Serializing a Point geometry to EWKB
 var ewkbBuffer = new wkx.Point(1, 2).toEwkb();
