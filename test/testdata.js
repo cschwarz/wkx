@@ -9,6 +9,7 @@ var GeometryCollection = require('../lib/geometrycollection');
 module.exports = {
     emptyPoint: {
         geometry: new Point(),
+        wkbGeometry: new MultiPoint(),
         wkt: 'POINT EMPTY',
         wkb: '010400000000000000',
         ewkb: '0104000020e610000000000000'
