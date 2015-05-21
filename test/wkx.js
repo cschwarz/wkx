@@ -88,15 +88,19 @@ describe('wkx', function () {
                 it ('toWkt()', function () {
                     assertToWkt(testData[testKey]);                    
                 });
-                it ('toWkb()', function () {
-                    assertToWkb(testData[testKey]);                    
-                });
+                if (!testData[testKey].ignoreToWkb) {
+                    it ('toWkb()', function () {
+                        assertToWkb(testData[testKey]);  
+                    });
+                }
                 it ('toEwkt()', function () {
                     assertToEwkt(testData[testKey]);                    
                 });
-                it ('toEwkb()', function () {
-                    assertToEwkb(testData[testKey]);                    
-                });
+                if (!testData[testKey].ignoreToWkb) {
+                    it ('toEwkb()', function () {
+                        assertToEwkb(testData[testKey]);                    
+                    });
+                }
             });
         })(testKey);
     }    

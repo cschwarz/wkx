@@ -21,6 +21,7 @@ module.exports = {
         ewkb: '0101000020e6100000000000000000f03f0000000000000040'
     },
     pointBigEndian: {
+        ignoreToWkb: true,
         geometry: new Point(1, 2),
         wkt: 'POINT(1 2)',
         wkb: '00000000013ff00000000000004000000000000000',
