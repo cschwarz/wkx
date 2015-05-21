@@ -4,7 +4,7 @@
   "description": "A WKT/WKB/EWKT/EWKB parser and serializer",
   "main": "lib/wkx.js",
   "scripts": {
-    "test": "mocha",
+    "test": "jshint . && mocha",
     "build": "gulp",
     "coveralls": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec && cat ./coverage/lcov.info | coveralls && rm -rf ./coverage"
   },
