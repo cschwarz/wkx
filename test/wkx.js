@@ -22,6 +22,11 @@ function assertParseWkb(data) {
     assert.deepEqual(Geometry.parse(new Buffer(data.wkb, 'hex')), eval(geometry));
 }
 
+function assertParseWkbXdr(data) {
+    var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
+    assert.deepEqual(Geometry.parse(new Buffer(data.wkbXdr, 'hex')), eval(geometry));
+}
+
 function assertParseEwkt(data) {
     data.geometry = eval(data.geometry);
     data.geometry.srid = 4326;
@@ -33,6 +38,13 @@ function assertParseEwkb(data) {
     geometry = eval(geometry);
     geometry.srid = 4326;
     assert.deepEqual(Geometry.parse(new Buffer(data.ewkb, 'hex')), geometry);
+}
+
+function assertParseEwkbXdr(data) {
+    var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
+    geometry = eval(geometry);
+    geometry.srid = 4326;
+    assert.deepEqual(Geometry.parse(new Buffer(data.ewkbXdr, 'hex')), geometry);
 }
 
 function assertToWkt(data) {
@@ -92,28 +104,30 @@ describe('wkx', function () {
             it ('parse(wkb)', function () {
                 assertParseWkb(testData[testKey]);
             });
+            it ('parse(wkb xdr)', function () {
+                assertParseWkbXdr(testData[testKey]);
+            });
             it ('parse(ewkt)', function () {
                 assertParseEwkt(testData[testKey]);
             });
             it ('parse(ewkb)', function () {
                 assertParseEwkb(testData[testKey]);
             });
+            it ('parse(ewkb xdr)', function () {
+                assertParseEwkbXdr(testData[testKey]);
+            });
             it ('toWkt()', function () {
                 assertToWkt(testData[testKey]);
             });
-            if (!testData[testKey].ignoreToWkb) {
-                it ('toWkb()', function () {
-                    assertToWkb(testData[testKey]);
-                });
-            }
+            it ('toWkb()', function () {
+                assertToWkb(testData[testKey]);
+            });
             it ('toEwkt()', function () {
                 assertToEwkt(testData[testKey]);
             });
-            if (!testData[testKey].ignoreToWkb) {
-                it ('toEwkb()', function () {
-                    assertToEwkb(testData[testKey]);
-                });
-            }
+            it ('toEwkb()', function () {
+                assertToEwkb(testData[testKey]);
+            });
         });
     }
 

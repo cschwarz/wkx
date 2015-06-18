@@ -11,6 +11,7 @@
   "author": "Christian Schwarz",
   "license": "MIT",
   "devDependencies": {
+    "async": "^1.2.1",
     "browserify": "^10.2.1",
     "coveralls": "^2.11.2",
     "gulp": "^3.8.11",
@@ -20,6 +21,7 @@
     "istanbul": "^0.3.14",
     "jshint": "^2.7.0",
     "mocha": "^2.2.5",
+    "pg": "^4.4.0",
     "vinyl": "^0.4.6"
   },
   "repository": {
