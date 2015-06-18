@@ -20,7 +20,7 @@ client.connect(function(err) {
             value.ewkb = result.rows[0].ewkb;
             value.wkbXdr = result.rows[0].wkbxdr;
             value.ewkbXdr = result.rows[0].ewkbxdr;
-            value.geojson = JSON.parse(result.rows[0].geojson);
+            value.geoJSON = JSON.parse(result.rows[0].geojson);
 
             callback();
         });

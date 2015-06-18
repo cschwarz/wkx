@@ -68,7 +68,7 @@ function assertToEwkb(data) {
 }
 
 function assertToGeoJSON(data) {
-    assert.deepEqual(data.geometry.toGeoJSON(), data.geojson);
+    assert.deepEqual(data.geometry.toGeoJSON(), data.geoJSON);
 }
 
 describe('wkx', function () {
