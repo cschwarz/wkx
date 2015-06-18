@@ -1,44 +1,68 @@
+/* jshint evil: true */
+
 var Geometry = require('../lib/geometry');
 var Point = require('../lib/point');
+var LineString = require('../lib/linestring');
+var Polygon = require('../lib/polygon');
+var MultiPoint = require('../lib/multipoint');
+var MultiLineString = require('../lib/multilinestring');
+var MultiPolygon = require('../lib/multipolygon');
+var GeometryCollection = require('../lib/geometrycollection');
 
-var testData = require('./testdata');
+var testData = require('./testdata.json');
 
 var assert = require('assert');
 
 function assertParseWkt(data) {
-    assert.deepEqual(Geometry.parse(data.wkt), data.geometry);
+    assert.deepEqual(Geometry.parse(data.wkt), eval(data.geometry));
 }
 
 function assertParseWkb(data) {
     var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
-    assert.deepEqual(Geometry.parse(new Buffer(data.wkb, 'hex')), geometry);
+    assert.deepEqual(Geometry.parse(new Buffer(data.wkb, 'hex')), eval(geometry));
+}
+
+function assertParseWkbXdr(data) {
+    var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
+    assert.deepEqual(Geometry.parse(new Buffer(data.wkbXdr, 'hex')), eval(geometry));
 }
 
 function assertParseEwkt(data) {
+    data.geometry = eval(data.geometry);
     data.geometry.srid = 4326;
     assert.deepEqual(Geometry.parse('SRID=4326;' + data.wkt), data.geometry);
 }
 
 function assertParseEwkb(data) {
     var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
+    geometry = eval(geometry);
     geometry.srid = 4326;
     assert.deepEqual(Geometry.parse(new Buffer(data.ewkb, 'hex')), geometry);
 }
 
+function assertParseEwkbXdr(data) {
+    var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
+    geometry = eval(geometry);
+    geometry.srid = 4326;
+    assert.deepEqual(Geometry.parse(new Buffer(data.ewkbXdr, 'hex')), geometry);
+}
+
 function assertToWkt(data) {
-    assert.equal(data.geometry.toWkt(), data.wkt);
+    assert.equal(eval(data.geometry).toWkt(), data.wkt);
 }
 
 function assertToWkb(data) {
-    assert.equal(data.geometry.toWkb().toString('hex'), data.wkb);
+    assert.equal(eval(data.geometry).toWkb().toString('hex'), data.wkb);
 }
 
 function assertToEwkt(data) {
+    data.geometry = eval(data.geometry);
     data.geometry.srid = 4326;
     assert.equal(data.geometry.toEwkt(), 'SRID=4326;' + data.wkt);
 }
 
 function assertToEwkb(data) {
+    data.geometry = eval(data.geometry);
     data.geometry.srid = 4326;
     assert.equal(data.geometry.toEwkb().toString('hex'), data.ewkb);
 }
@@ -84,28 +108,30 @@ describe('wkx', function () {
             it ('parse(wkb)', function () {
                 assertParseWkb(testData[testKey]);
             });
+            it ('parse(wkb xdr)', function () {
+                assertParseWkbXdr(testData[testKey]);
+            });
             it ('parse(ewkt)', function () {
                 assertParseEwkt(testData[testKey]);
             });
             it ('parse(ewkb)', function () {
                 assertParseEwkb(testData[testKey]);
             });
+            it ('parse(ewkb xdr)', function () {
+                assertParseEwkbXdr(testData[testKey]);
+            });
             it ('toWkt()', function () {
                 assertToWkt(testData[testKey]);
             });
-            if (!testData[testKey].ignoreToWkb) {
-                it ('toWkb()', function () {
-                    assertToWkb(testData[testKey]);
-                });
-            }
+            it ('toWkb()', function () {
+                assertToWkb(testData[testKey]);
+            });
             it ('toEwkt()', function () {
                 assertToEwkt(testData[testKey]);
             });
-            if (!testData[testKey].ignoreToWkb) {
-                it ('toEwkb()', function () {
-                    assertToEwkb(testData[testKey]);
-                });
-            }
+            it ('toEwkb()', function () {
+                assertToEwkb(testData[testKey]);
+            });
             if (testData[testKey].geojson) {
                 it ('toGeoJSON()', function () {
                     assertToGeoJSON(testData[testKey]);
