@@ -38,9 +38,13 @@ function assertToEwkt(data) {
     assert.equal(data.geometry.toEwkt(), 'SRID=4326;' + data.wkt);
 }
 
-function assertToEwkb(data) {    
+function assertToEwkb(data) {
     data.geometry.srid = 4326;
     assert.equal(data.geometry.toEwkb().toString('hex'), data.ewkb);
+}
+
+function assertToGeoJSON(data) {
+    assert.deepEqual(data.geometry.toGeoJSON(), data.geojson);
 }
 
 describe('wkx', function () {
@@ -66,46 +70,51 @@ describe('wkx', function () {
             assert.throws(function () { Geometry.parse('POINT(1 2'); }, /Expected group end/);
             assert.throws(function () { Geometry.parse('POINT(1)'); }, /Expected coordinate pair/);
             assert.throws(function () { Geometry.parse('TEST'); }, /Expected geometry type/);
-            assert.throws(function () { 
-                Geometry.parse(new Buffer('010800000000000000', 'hex')); 
+            assert.throws(function () {
+                Geometry.parse(new Buffer('010800000000000000', 'hex'));
             }, /GeometryType 8 not supported/);
         });
     });
-    
+
     function createTest (testKey) {
         describe(testKey, function () {
             it ('parse(wkt)', function () {
-                assertParseWkt(testData[testKey]);                    
+                assertParseWkt(testData[testKey]);
             });
             it ('parse(wkb)', function () {
-                assertParseWkb(testData[testKey]);                    
+                assertParseWkb(testData[testKey]);
             });
             it ('parse(ewkt)', function () {
-                assertParseEwkt(testData[testKey]);                    
+                assertParseEwkt(testData[testKey]);
             });
             it ('parse(ewkb)', function () {
-                assertParseEwkb(testData[testKey]);                    
+                assertParseEwkb(testData[testKey]);
             });
             it ('toWkt()', function () {
-                assertToWkt(testData[testKey]);                    
+                assertToWkt(testData[testKey]);
             });
             if (!testData[testKey].ignoreToWkb) {
                 it ('toWkb()', function () {
-                    assertToWkb(testData[testKey]);  
+                    assertToWkb(testData[testKey]);
                 });
             }
             it ('toEwkt()', function () {
-                assertToEwkt(testData[testKey]);                    
+                assertToEwkt(testData[testKey]);
             });
             if (!testData[testKey].ignoreToWkb) {
                 it ('toEwkb()', function () {
-                    assertToEwkb(testData[testKey]);                    
+                    assertToEwkb(testData[testKey]);
+                });
+            }
+            if (testData[testKey].geojson) {
+                it ('toGeoJSON()', function () {
+                    assertToGeoJSON(testData[testKey]);
                 });
             }
         });
     }
-        
+
     for (var testKey in testData) {
         createTest(testKey);
-    }    
+    }
 });

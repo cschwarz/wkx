@@ -12,13 +12,15 @@ module.exports = {
         wkbGeometry: new MultiPoint(),
         wkt: 'POINT EMPTY',
         wkb: '010400000000000000',
-        ewkb: '0104000020e610000000000000'
+        ewkb: '0104000020e610000000000000',
+        geojson: {'type':'Point','coordinates':[]}
     },
     point: {
         geometry: new Point(1, 2),
         wkt: 'POINT(1 2)',
         wkb: '0101000000000000000000f03f0000000000000040',
-        ewkb: '0101000020e6100000000000000000f03f0000000000000040'
+        ewkb: '0101000020e6100000000000000000f03f0000000000000040',
+        geojson: {'type':'Point','coordinates':[1,2]}
     },
     pointBigEndian: {
         ignoreToWkb: true,
@@ -150,7 +152,7 @@ module.exports = {
                   new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
                     [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)],
                     [new Point(21, 22), new Point(23, 24), new Point(25, 26), new Point(21, 22)]])]),
-        wkt: 'MULTIPOLYGON(((1 2,3 4,5 6,1 2)),((1 2,3 4,5 6,1 2),' + 
+        wkt: 'MULTIPOLYGON(((1 2,3 4,5 6,1 2)),((1 2,3 4,5 6,1 2),' +
              '(11 12,13 14,15 16,11 12),(21 22,23 24,25 26,21 22)))',
         wkb: '01060000000200000001030000000100000004000000000000000000f03f00000000000000400000' +
              '000000000840000000000000104000000000000014400000000000001840000000000000f03f0000' +
@@ -196,7 +198,7 @@ module.exports = {
                   new Polygon([new Point(1, 2), new Point(3, 4), new Point(5, 6), new Point(1, 2)], [
                     [new Point(11, 12), new Point(13, 14), new Point(15, 16), new Point(11, 12)],
                     [new Point(21, 22), new Point(23, 24), new Point(25, 26), new Point(21, 22)]])]),
-        wkt: 'GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4),' + 
+        wkt: 'GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4),' +
              'POLYGON((1 2,3 4,5 6,1 2),(11 12,13 14,15 16,11 12),(21 22,23 24,25 26,21 22)))',
         wkb: '0107000000030000000101000000000000000000f03f000000000000004001020000000200000000' +
              '0000000000f03f000000000000004000000000000008400000000000001040010300000003000000' +
