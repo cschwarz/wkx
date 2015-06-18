@@ -20,6 +20,7 @@
     "gulp-util": "^3.0.4",
     "istanbul": "^0.3.14",
     "jshint": "^2.7.0",
+    "json-stringify-pretty-compact": "^1.0.1",
     "mocha": "^2.2.5",
     "pg": "^4.4.0",
     "vinyl": "^0.4.6"
