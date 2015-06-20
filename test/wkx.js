@@ -47,6 +47,12 @@ function assertParseEwkbXdr(data) {
     assert.deepEqual(Geometry.parse(new Buffer(data.ewkbXdr, 'hex')), geometry);
 }
 
+function assertParseTwkb(data) {
+    var geometry = eval(data.geometry);
+    geometry.srid = 0;
+    assert.deepEqual(Geometry.parseTwkb(new Buffer(data.twkb, 'hex')), geometry);
+}
+
 function assertToWkt(data) {
     assert.equal(eval(data.geometry).toWkt(), data.wkt);
 }
@@ -65,6 +71,10 @@ function assertToEwkb(data) {
     data.geometry = eval(data.geometry);
     data.geometry.srid = 4326;
     assert.equal(data.geometry.toEwkb().toString('hex'), data.ewkb);
+}
+
+function assertToTwkb(data) {
+    assert.equal(eval(data.geometry).toTwkb().toString('hex'), data.twkb);
 }
 
 function assertToGeoJSON(data) {
@@ -119,6 +129,9 @@ describe('wkx', function () {
             });
             it ('parse(ewkb xdr)', function () {
                 assertParseEwkbXdr(testData[testKey]);
+            });
+            it ('parse(twkb)', function () {
+                assertParseTwkb(testData[testKey]);
             });
             it ('toWkt()', function () {
                 assertToWkt(testData[testKey]);
