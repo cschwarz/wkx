@@ -113,6 +113,19 @@ describe('wkx', function () {
             assert.throws(function () {
                 Geometry.parse(new Buffer('010800000000000000', 'hex'));
             }, /GeometryType 8 not supported/);
+            assert.throws(function () {
+                Geometry.parseTwkb(new Buffer('a800c09a0c80b518', 'hex'));
+            }, /GeometryType 8 not supported/);
+            assert.throws(function () {
+                Geometry.parseGeoJSON({ type: 'TEST' });
+            }, /GeometryType TEST not supported/);
+        });
+        it('parseTwkb() - bounding box, size, extended precision', function () {
+            assert.deepEqual(Geometry.parseTwkb(new Buffer('a1030ec09a0c0080b51800c09a0c80b518', 'hex')),
+                             new Point(1, 2));
+            assert.deepEqual(Geometry.parseTwkb(
+                             new Buffer('a10bb71cc09a0c0080b51800c0cf240080ea3000c09a0c80b518c0cf2480ea30', 'hex')),
+                             new Point(1, 2));
         });
     });
 
@@ -136,10 +149,10 @@ describe('wkx', function () {
             it ('parse(ewkb xdr)', function () {
                 assertParseEwkbXdr(testData[testKey]);
             });
-            it ('parse(twkb)', function () {
+            it ('parseTwkb()', function () {
                 assertParseTwkb(testData[testKey]);
             });
-            it ('parse(geoJSON)', function () {
+            it ('parseGeoJSON()', function () {
                 assertParseGeoJSON(testData[testKey]);
             });
             it ('toWkt()', function () {
