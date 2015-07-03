@@ -1,7 +1,7 @@
 wkx [![Build Status](https://travis-ci.org/cschwarz/wkx.svg?branch=master)](https://travis-ci.org/cschwarz/wkx) [![Coverage Status](https://coveralls.io/repos/cschwarz/wkx/badge.svg?branch=master)](https://coveralls.io/r/cschwarz/wkx?branch=master)
 ========
 
-A WKT/WKB/EWKT/EWKB parser and serializer with support for
+A WKT/WKB/EWKT/EWKB/TWKB/GeoJSON parser and serializer with support for
 
 - Point
 - LineString
@@ -86,25 +86,6 @@ document.getElementById('output').innerText = JSON.stringify(geometry, null, '  
 
 [RawGit]: http://rawgit.com/
 [browserify]: http://browserify.org/
-
-### Building the browser version ###
-
-To rebuild the browser version of `wkx.js` based on the current node modules, either install and use [gulp][]...
-```bash
-gulp
-```
-
-...or use the configured `npm` script:
-```bash
-npm run build
-```
-
-To enable source maps for debugging and development, rebuild using the `--debug` flag:
-```bash
-gulp --debug
-```
-
-This will generate `dist/wkx-debug.js` and `dist/wkx-debug.min.js`
 
 Todo
 ----
