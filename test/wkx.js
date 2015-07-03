@@ -130,7 +130,7 @@ describe('wkx', function () {
     });
 
     function createTest (testKey) {
-        describe(testKey, function () {/*
+        describe(testKey, function () {
             it ('parse(wkt)', function () {
                 assertParseWkt(testData[testKey]);
             });
@@ -166,13 +166,13 @@ describe('wkx', function () {
             });
             it ('toEwkb()', function () {
                 assertToEwkb(testData[testKey]);
-            });*/
+            });
             it ('toTwkb()', function () {
                 assertToTwkb(testData[testKey]);
-            });/*
+            });
             it ('toGeoJSON()', function () {
                 assertToGeoJSON(testData[testKey]);
-            });*/
+            });
         });
     }
 
