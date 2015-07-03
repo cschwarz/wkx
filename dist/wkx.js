@@ -11,14 +11,14 @@ function BinaryReader(buffer, isBigEndian) {
 function _read(readLE, readBE, size) {
     return function () {
         var value;
-        
+
         if (this.isBigEndian)
             value = readBE.call(this.buffer, this.position);
         else
             value = readLE.call(this.buffer, this.position);
-        
+
         this.position += size;
-        
+
         return value;
     };
 }
@@ -31,18 +31,38 @@ BinaryReader.prototype.readInt16 = _read(Buffer.prototype.readInt16LE, Buffer.pr
 BinaryReader.prototype.readInt32 = _read(Buffer.prototype.readInt32LE, Buffer.prototype.readInt32BE, 4);
 BinaryReader.prototype.readFloat = _read(Buffer.prototype.readFloatLE, Buffer.prototype.readFloatBE, 4);
 BinaryReader.prototype.readDouble = _read(Buffer.prototype.readDoubleLE, Buffer.prototype.readDoubleBE, 8);
+
+BinaryReader.prototype.readVarInt = function () {
+    var nextByte,
+        result = 0,
+        bytesRead = 0;
+
+    do {
+        nextByte = this.buffer[this.position + bytesRead];
+        result += (nextByte & 0x7F) << (7 * bytesRead);
+        bytesRead++;
+    } while (nextByte >= 0x80);
+
+    this.position += bytesRead;
+
+    return result;
+};
+
 }).call(this,require("buffer").Buffer)
 },{"buffer":"buffer"}],2:[function(require,module,exports){
 (function (Buffer){
 module.exports = BinaryWriter;
 
-function BinaryWriter(size) {
+function BinaryWriter(size, allowResize) {
     this.buffer = new Buffer(size);
     this.position = 0;
+    this.allowResize = allowResize;
 }
 
 function _write(write, size) {
     return function (value) {
+        this.ensureSize(size);
+
         write.call(this.buffer, value, this.position);
         this.position += size;
     };
@@ -64,9 +84,39 @@ BinaryWriter.prototype.writeDoubleLE = _write(Buffer.prototype.writeDoubleLE, 8)
 BinaryWriter.prototype.writeDoubleBE = _write(Buffer.prototype.writeDoubleBE, 8);
 
 BinaryWriter.prototype.writeBuffer = function (buffer) {
+    this.ensureSize(buffer.length);
+
     buffer.copy(this.buffer, this.position, 0, buffer.length);
     this.position += buffer.length;
 };
+
+BinaryWriter.prototype.writeVarInt = function (value) {
+    var length = 1;
+
+    while ((value & 0xFFFFFF80) !== 0) {
+        this.writeUInt8((value & 0x7F) | 0x80);
+        value >>>= 7;
+        length++;
+    }
+
+    this.writeUInt8(value & 0x7F);
+
+    return length;
+};
+
+BinaryWriter.prototype.ensureSize = function (size) {
+    if (this.buffer.length < this.position + size) {
+        if (this.allowResize) {
+            var tempBuffer = new Buffer(this.position + size);
+            this.buffer.copy(tempBuffer, 0, 0, this.buffer.length);
+            this.buffer = tempBuffer;
+        }
+        else {
+            throw new RangeError('index out of range');
+        }
+    }
+};
+
 }).call(this,require("buffer").Buffer)
 },{"buffer":"buffer"}],3:[function(require,module,exports){
 (function (Buffer){
@@ -83,6 +133,7 @@ var GeometryCollection = require('./geometrycollection');
 var BinaryReader = require('./binaryreader');
 var BinaryWriter = require('./binarywriter');
 var WktParser = require('./wktparser');
+var ZigZag = require('./zigzag.js');
 
 function Geometry() {
     this.srid = 0;
@@ -107,13 +158,13 @@ Geometry._parseWkt = function (value) {
         wktParser = value;
     else
         wktParser = new WktParser(value);
-        
+
     var match = wktParser.matchRegex([/^SRID=(\d+);/]);
     if (match)
         srid = match[1];
 
     var geometryType = wktParser.matchType();
-    
+
     var options = {
         srid: srid || 0
     };
@@ -153,13 +204,13 @@ Geometry._parseWkb = function (value) {
     binaryReader.isBigEndian = !binaryReader.readInt8();
 
     wkbType = binaryReader.readUInt32();
-    geometryType = wkbType & 0xFF;    
-    
+    geometryType = wkbType & 0xFF;
+
     hasSrid = (wkbType & 0x20000000) === 0x20000000;
-        
+
     if (hasSrid)
         srid = binaryReader.readUInt32();
-    
+
     var options = {
         srid: srid || 0
     };
@@ -184,25 +235,117 @@ Geometry._parseWkb = function (value) {
     }
 };
 
-Geometry.prototype.toEwkt = function () {
-    return 'SRID=' + this.srid + ';' + this.toWkt();   
+Geometry.parseTwkb = function (value) {
+    var binaryReader,
+        options = {};
+
+    if (value instanceof BinaryReader)
+        binaryReader = value;
+    else
+        binaryReader = new BinaryReader(value);
+
+    var type = binaryReader.readUInt8();
+    var metadataHeader = binaryReader.readUInt8();
+
+    var geometryType = type & 0x0F;
+    options.precision = ZigZag.decode(type >> 4);
+    options.precisionFactor = Math.pow(10, options.precision);
+
+    options.hasBoundingBox = metadataHeader >> 0 & 1;
+    options.hasSizeAttribute = metadataHeader >> 1 & 1;
+    options.hasIdList = metadataHeader >> 2 & 1;
+    options.hasExtendedPrecision = metadataHeader >> 3 & 1;
+    options.isEmpty = metadataHeader >> 4 & 1;
+
+    if (options.hasExtendedPrecision) {
+        var extendedPrecision = binaryReader.readUInt8();
+        options.hasZ = (extendedPrecision & 0x01);
+        options.hasM = (extendedPrecision & 0x02);
+    }
+    if (options.hasSizeAttribute)
+        binaryReader.readVarInt();
+    if (options.hasBoundingBox) {
+        var dimensions = 2;
+
+        if (options.hasZ)
+            dimensions++;
+        if (options.hasM)
+            dimensions++;
+
+        for (var i = 0; i < dimensions; i++) {
+            binaryReader.readVarInt();
+            binaryReader.readVarInt();
+        }
+    }
+
+    switch (geometryType) {
+    case Types.wkb.Point:
+        return Point._parseTwkb(binaryReader, options);
+    case Types.wkb.LineString:
+        return LineString._parseTwkb(binaryReader, options);
+    case Types.wkb.Polygon:
+        return Polygon._parseTwkb(binaryReader, options);
+    case Types.wkb.MultiPoint:
+        return MultiPoint._parseTwkb(binaryReader, options);
+    case Types.wkb.MultiLineString:
+        return MultiLineString._parseTwkb(binaryReader, options);
+    case Types.wkb.MultiPolygon:
+        return MultiPolygon._parseTwkb(binaryReader, options);
+    case Types.wkb.GeometryCollection:
+        return GeometryCollection._parseTwkb(binaryReader, options);
+    default:
+        throw new Error('GeometryType ' + geometryType + ' not supported');
+    }
 };
 
-Geometry.prototype.toEwkb = function () {    
+Geometry.parseGeoJSON = function (value) {
+    switch (value.type) {
+    case Types.geoJSON.Point:
+        return Point._parseGeoJSON(value);
+    case Types.geoJSON.LineString:
+        return LineString._parseGeoJSON(value);
+    case Types.geoJSON.Polygon:
+        return Polygon._parseGeoJSON(value);
+    case Types.geoJSON.MultiPoint:
+        return MultiPoint._parseGeoJSON(value);
+    case Types.geoJSON.MultiLineString:
+        return MultiLineString._parseGeoJSON(value);
+    case Types.geoJSON.MultiPolygon:
+        return MultiPolygon._parseGeoJSON(value);
+    case Types.geoJSON.GeometryCollection:
+        return GeometryCollection._parseGeoJSON(value);
+    default:
+        throw new Error('GeometryType ' + value.type + ' not supported');
+    }
+};
+
+Geometry.prototype.toEwkt = function () {
+    return 'SRID=' + this.srid + ';' + this.toWkt();
+};
+
+Geometry.prototype.toEwkb = function () {
     var ewkb = new BinaryWriter(this._getWkbSize() + 4);
     var wkb = this.toWkb();
-    
+
     ewkb.writeInt8(1);
     ewkb.writeUInt32LE(wkb.slice(1, 5).readUInt32LE(0) | 0x20000000);
     ewkb.writeUInt32LE(this.srid);
-        
+
     ewkb.writeBuffer(wkb.slice(5));
-    
+
     return ewkb.buffer;
 };
 
+Geometry.prototype._writeTwkbHeader = function (twkb, geometryType, precision, isEmpty) {
+    var type = (ZigZag.encode(precision) << 4) + geometryType;
+    var metadataHeader = isEmpty << 4;
+
+    twkb.writeUInt8(type);
+    twkb.writeUInt8(metadataHeader);
+};
+
 }).call(this,require("buffer").Buffer)
-},{"./binaryreader":1,"./binarywriter":2,"./geometrycollection":4,"./linestring":5,"./multilinestring":6,"./multipoint":7,"./multipolygon":8,"./point":9,"./polygon":10,"./types":11,"./wktparser":12,"buffer":"buffer"}],4:[function(require,module,exports){
+},{"./binaryreader":1,"./binarywriter":2,"./geometrycollection":4,"./linestring":5,"./multilinestring":6,"./multipoint":7,"./multipolygon":8,"./point":9,"./polygon":10,"./types":11,"./wktparser":12,"./zigzag.js":13,"buffer":"buffer"}],4:[function(require,module,exports){
 module.exports = GeometryCollection;
 
 var util = require('util');
@@ -210,10 +353,11 @@ var util = require('util');
 var Types = require('./types');
 var Geometry = require('./geometry');
 var BinaryWriter = require('./binarywriter');
+var ZigZag = require('./zigzag.js');
 
 function GeometryCollection(geometries) {
     Geometry.call(this);
-    
+
     this.geometries = geometries || [];
 }
 
@@ -249,6 +393,29 @@ GeometryCollection._parseWkb = function (value, options) {
     return geometryCollection;
 };
 
+GeometryCollection._parseTwkb = function (value, options) {
+    var geometryCollection = new GeometryCollection();
+
+    if (options.isEmpty)
+        return geometryCollection;
+
+    var geometryCount = value.readVarInt();
+
+    for (var i = 0; i < geometryCount; i++)
+        geometryCollection.geometries.push(Geometry.parseTwkb(value));
+
+    return geometryCollection;
+};
+
+GeometryCollection._parseGeoJSON = function (value) {
+    var geometryCollection = new GeometryCollection();
+
+    for (var i = 0; i < value.geometries.length; i++)
+        geometryCollection.geometries.push(Geometry.parseGeoJSON(value.geometries[i]));
+
+    return geometryCollection;
+};
+
 GeometryCollection.prototype.toWkt = function () {
     if (this.geometries.length === 0)
         return Types.wkt.GeometryCollection + ' EMPTY';
@@ -278,6 +445,25 @@ GeometryCollection.prototype.toWkb = function () {
     return wkb.buffer;
 };
 
+GeometryCollection.prototype.toTwkb = function () {
+    var twkb = new BinaryWriter(0, true);
+
+    var precision = 5;
+    var precisionFactor = Math.pow(10, precision);
+    var isEmpty = this.geometries.length === 0;
+
+    this._writeTwkbHeader(twkb, Types.wkb.GeometryCollection, precision, isEmpty);
+
+    if (this.geometries.length > 0) {
+        twkb.writeVarInt(this.geometries.length);
+
+        for (var i = 0; i < this.geometries.length; i++)
+            twkb.writeBuffer(this.geometries[i].toTwkb());
+    }
+
+    return twkb.buffer;
+};
+
 GeometryCollection.prototype._getWkbSize = function () {
     var size = 1 + 4 + 4;
 
@@ -287,7 +473,19 @@ GeometryCollection.prototype._getWkbSize = function () {
     return size;
 };
 
-},{"./binarywriter":2,"./geometry":3,"./types":11,"util":19}],5:[function(require,module,exports){
+GeometryCollection.prototype.toGeoJSON = function () {
+    var geoJSON = {
+        type: Types.geoJSON.GeometryCollection,
+        geometries: []
+    };
+
+    for (var i = 0; i < this.geometries.length; i++)
+        geoJSON.geometries.push(this.geometries[i].toGeoJSON());
+
+    return geoJSON;
+};
+
+},{"./binarywriter":2,"./geometry":3,"./types":11,"./zigzag.js":13,"util":20}],5:[function(require,module,exports){
 module.exports = LineString;
 
 var util = require('util');
@@ -296,10 +494,11 @@ var Geometry = require('./geometry');
 var Types = require('./types');
 var Point = require('./point');
 var BinaryWriter = require('./binarywriter');
+var ZigZag = require('./zigzag.js');
 
 function LineString(points) {
     Geometry.call(this);
-    
+
     this.points = points || [];
 }
 
@@ -327,6 +526,35 @@ LineString._parseWkb = function (value, options) {
 
     for (var i = 0; i < pointCount; i++)
         lineString.points.push(new Point(value.readDouble(), value.readDouble()));
+
+    return lineString;
+};
+
+LineString._parseTwkb = function (value, options) {
+    var lineString = new LineString();
+
+    if (options.isEmpty)
+        return lineString;
+
+    var x = 0;
+    var y = 0;
+    var pointCount = value.readVarInt();
+
+    for (var i = 0; i < pointCount; i++) {
+        x += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+        y += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+
+        lineString.points.push(new Point(x, y));
+    }
+
+    return lineString;
+};
+
+LineString._parseGeoJSON = function (value) {
+    var lineString = new LineString();
+
+    for (var i = 0; i < value.coordinates.length; i++)
+        lineString.points.push(new Point(value.coordinates[i][0], value.coordinates[i][1]));
 
     return lineString;
 };
@@ -366,23 +594,66 @@ LineString.prototype.toWkb = function () {
     return wkb.buffer;
 };
 
+LineString.prototype.toTwkb = function () {
+    var twkb = new BinaryWriter(0, true);
+
+    var precision = 5;
+    var precisionFactor = Math.pow(10, precision);
+    var isEmpty = this.points.length === 0;
+
+    this._writeTwkbHeader(twkb, Types.wkb.LineString, precision, isEmpty);
+
+    if (this.points.length > 0) {
+        twkb.writeVarInt(this.points.length);
+
+        var lastX = 0;
+        var lastY = 0;
+        for (var i = 0; i < this.points.length; i++) {
+            var x = this.points[i].x * precisionFactor;
+            var y = this.points[i].y * precisionFactor;
+
+            twkb.writeVarInt(ZigZag.encode(x - lastX));
+            twkb.writeVarInt(ZigZag.encode(y - lastY));
+
+            lastX = x;
+            lastY = y;
+        }
+    }
+
+    return twkb.buffer;
+};
+
 LineString.prototype._getWkbSize = function () {
     return 1 + 4 + 4 + (this.points.length * 16);
 };
 
-},{"./binarywriter":2,"./geometry":3,"./point":9,"./types":11,"util":19}],6:[function(require,module,exports){
+LineString.prototype.toGeoJSON = function () {
+    var geoJSON = {
+        type: Types.geoJSON.LineString,
+        coordinates: []
+    };
+
+    for (var i = 0; i < this.points.length; i++)
+        geoJSON.coordinates.push([this.points[i].x, this.points[i].y]);
+
+    return geoJSON;
+};
+
+},{"./binarywriter":2,"./geometry":3,"./point":9,"./types":11,"./zigzag.js":13,"util":20}],6:[function(require,module,exports){
 module.exports = MultiLineString;
 
 var util = require('util');
 
 var Types = require('./types');
 var Geometry = require('./geometry');
+var Point = require('./point');
 var LineString = require('./linestring');
 var BinaryWriter = require('./binarywriter');
+var ZigZag = require('./zigzag.js');
 
 function MultiLineString(lineStrings) {
     Geometry.call(this);
-    
+
     this.lineStrings = lineStrings || [];
 }
 
@@ -420,6 +691,42 @@ MultiLineString._parseWkb = function (value, options) {
     return multiLineString;
 };
 
+MultiLineString._parseTwkb = function (value, options) {
+    var multiLineString = new MultiLineString();
+
+    if (options.isEmpty)
+        return multiLineString;
+
+    var x = 0;
+    var y = 0;
+    var lineStringCount = value.readVarInt();
+
+    for (var i = 0; i < lineStringCount; i++) {
+        var lineString = new LineString();
+        var pointCount = value.readVarInt();
+
+        for (var j = 0; j < pointCount; j++) {
+            x += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+            y += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+
+            lineString.points.push(new Point(x, y));
+        }
+
+        multiLineString.lineStrings.push(lineString);
+    }
+
+    return multiLineString;
+};
+
+MultiLineString._parseGeoJSON = function (value) {
+    var multiLineString = new MultiLineString();
+
+    for (var i = 0; i < value.coordinates.length; i++)
+        multiLineString.lineStrings.push(LineString._parseGeoJSON({ coordinates: value.coordinates[i] }));
+
+    return multiLineString;
+};
+
 MultiLineString.prototype.toWkt = function () {
     if (this.lineStrings.length === 0)
         return Types.wkt.MultiLineString + ' EMPTY';
@@ -449,6 +756,39 @@ MultiLineString.prototype.toWkb = function () {
     return wkb.buffer;
 };
 
+MultiLineString.prototype.toTwkb = function () {
+    var twkb = new BinaryWriter(0, true);
+
+    var precision = 5;
+    var precisionFactor = Math.pow(10, precision);
+    var isEmpty = this.lineStrings.length === 0;
+
+    this._writeTwkbHeader(twkb, Types.wkb.MultiLineString, precision, isEmpty);
+
+    if (this.lineStrings.length > 0) {
+        twkb.writeVarInt(this.lineStrings.length);
+
+        var lastX = 0;
+        var lastY = 0;
+        for (var i = 0; i < this.lineStrings.length; i++) {
+            twkb.writeVarInt(this.lineStrings[i].points.length);
+
+            for (var j = 0; j < this.lineStrings[i].points.length; j++) {
+                var x = this.lineStrings[i].points[j].x * precisionFactor;
+                var y = this.lineStrings[i].points[j].y * precisionFactor;
+
+                twkb.writeVarInt(ZigZag.encode(x - lastX));
+                twkb.writeVarInt(ZigZag.encode(y - lastY));
+
+                lastX = x;
+                lastY = y;
+            }
+        }
+    }
+
+    return twkb.buffer;
+};
+
 MultiLineString.prototype._getWkbSize = function () {
     var size = 1 + 4 + 4;
 
@@ -458,18 +798,32 @@ MultiLineString.prototype._getWkbSize = function () {
     return size;
 };
 
-},{"./binarywriter":2,"./geometry":3,"./linestring":5,"./types":11,"util":19}],7:[function(require,module,exports){
+MultiLineString.prototype.toGeoJSON = function () {
+    var geoJSON = {
+        type: Types.geoJSON.MultiLineString,
+        coordinates: []
+    };
+
+    for (var i = 0; i < this.lineStrings.length; i++)
+        geoJSON.coordinates.push(this.lineStrings[i].toGeoJSON().coordinates);
+
+    return geoJSON;
+};
+
+},{"./binarywriter":2,"./geometry":3,"./linestring":5,"./point":9,"./types":11,"./zigzag.js":13,"util":20}],7:[function(require,module,exports){
 module.exports = MultiPoint;
 
 var util = require('util');
 
 var Types = require('./types');
 var Geometry = require('./geometry');
+var Point = require('./point');
 var BinaryWriter = require('./binarywriter');
+var ZigZag = require('./zigzag');
 
 function MultiPoint(points) {
     Geometry.call(this);
-    
+
     this.points = points || [];
 }
 
@@ -490,13 +844,43 @@ MultiPoint._parseWkt = function (value, options) {
 };
 
 MultiPoint._parseWkb = function (value, options) {
-    var multiPoint = new MultiPoint(); 
+    var multiPoint = new MultiPoint();
     multiPoint.srid = options.srid;
 
     var pointCount = value.readUInt32();
 
     for (var i = 0; i < pointCount; i++)
         multiPoint.points.push(Geometry.parse(value));
+
+    return multiPoint;
+};
+
+MultiPoint._parseTwkb = function (value, options) {
+    var multiPoint = new MultiPoint();
+
+    if (options.isEmpty)
+        return multiPoint;
+
+    var pointCount = value.readVarInt();
+
+    var x = 0;
+    var y = 0;
+
+    for (var i = 0; i < pointCount; i++) {
+        x += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+        y += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+
+        multiPoint.points.push(new Point(x, y));
+    }
+
+    return multiPoint;
+};
+
+MultiPoint._parseGeoJSON = function (value) {
+    var multiPoint = new MultiPoint();
+
+    for (var i = 0; i < value.coordinates.length; i++)
+        multiPoint.points.push(Point._parseGeoJSON({ coordinates: value.coordinates[i] }));
 
     return multiPoint;
 };
@@ -530,23 +914,66 @@ MultiPoint.prototype.toWkb = function () {
     return wkb.buffer;
 };
 
+MultiPoint.prototype.toTwkb = function () {
+    var twkb = new BinaryWriter(0, true);
+
+    var precision = 5;
+    var precisionFactor = Math.pow(10, precision);
+    var isEmpty = this.points.length === 0;
+
+    this._writeTwkbHeader(twkb, Types.wkb.MultiPoint, precision, isEmpty);
+
+    if (this.points.length > 0) {
+        twkb.writeVarInt(this.points.length);
+
+        var lastX = 0;
+        var lastY = 0;
+        for (var i = 0; i < this.points.length; i++) {
+            var x = this.points[i].x * precisionFactor;
+            var y = this.points[i].y * precisionFactor;
+
+            twkb.writeVarInt(ZigZag.encode(x - lastX));
+            twkb.writeVarInt(ZigZag.encode(y - lastY));
+
+            lastX = x;
+            lastY = y;
+        }
+    }
+
+    return twkb.buffer;
+};
+
 MultiPoint.prototype._getWkbSize = function () {
     return 1 + 4 + 4 + (this.points.length * 21);
 };
 
-},{"./binarywriter":2,"./geometry":3,"./types":11,"util":19}],8:[function(require,module,exports){
+MultiPoint.prototype.toGeoJSON = function () {
+    var geoJSON = {
+        type: Types.geoJSON.MultiPoint,
+        coordinates: []
+    };
+
+    for (var i = 0; i < this.points.length; i++)
+        geoJSON.coordinates.push(this.points[i].toGeoJSON().coordinates);
+
+    return geoJSON;
+};
+
+},{"./binarywriter":2,"./geometry":3,"./point":9,"./types":11,"./zigzag":13,"util":20}],8:[function(require,module,exports){
 module.exports = MultiPolygon;
 
 var util = require('util');
 
 var Types = require('./types');
 var Geometry = require('./geometry');
+var Point = require('./point');
 var Polygon = require('./polygon');
 var BinaryWriter = require('./binarywriter');
+var ZigZag = require('./zigzag.js');
 
 function MultiPolygon(polygons) {
     Geometry.call(this);
-    
+
     this.polygons = polygons || [];
 }
 
@@ -599,6 +1026,58 @@ MultiPolygon._parseWkb = function (value, options) {
     return multiPolygon;
 };
 
+MultiPolygon._parseTwkb = function (value, options) {
+    var multiPolygon = new MultiPolygon();
+
+    if (options.isEmpty)
+        return multiPolygon;
+
+    var x = 0;
+    var y = 0;
+    var polygonCount = value.readVarInt();
+
+    for (var i = 0; i < polygonCount; i++) {
+        var polygon = new Polygon();
+        var ringCount = value.readVarInt();
+        var exteriorRingCount = value.readVarInt();
+
+        for (var j = 0; j < exteriorRingCount; j++) {
+            x += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+            y += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+
+            polygon.exteriorRing.push(new Point(x, y));
+        }
+
+        for (j = 1; j < ringCount; j++) {
+            var interiorRing = [];
+
+            var interiorRingCount = value.readVarInt();
+
+            for (var k = 0; k < interiorRingCount; k++) {
+                x += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+                y += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+
+                interiorRing.push(new Point(x, y));
+            }
+
+            polygon.interiorRings.push(interiorRing);
+        }
+
+        multiPolygon.polygons.push(polygon);
+    }
+
+    return multiPolygon;
+};
+
+MultiPolygon._parseGeoJSON = function (value) {
+    var multiPolygon = new MultiPolygon();
+
+    for (var i = 0; i < value.coordinates.length; i++)
+        multiPolygon.polygons.push(Polygon._parseGeoJSON({ coordinates: value.coordinates[i] }));
+
+    return multiPolygon;
+};
+
 MultiPolygon.prototype.toWkt = function () {
     if (this.polygons.length === 0)
         return Types.wkt.MultiPolygon + ' EMPTY';
@@ -628,6 +1107,59 @@ MultiPolygon.prototype.toWkb = function () {
     return wkb.buffer;
 };
 
+MultiPolygon.prototype.toTwkb = function () {
+    var twkb = new BinaryWriter(0, true);
+
+    var precision = 5;
+    var precisionFactor = Math.pow(10, precision);
+    var isEmpty = this.polygons.length === 0;
+
+    this._writeTwkbHeader(twkb, Types.wkb.MultiPolygon, precision, isEmpty);
+
+    if (this.polygons.length > 0) {
+        twkb.writeVarInt(this.polygons.length);
+
+        var lastX = 0;
+        var lastY = 0;
+        var x = 0;
+        var y = 0;
+
+        for (var i = 0; i < this.polygons.length; i++) {
+            twkb.writeVarInt(1 + this.polygons[i].interiorRings.length);
+
+            twkb.writeVarInt(this.polygons[i].exteriorRing.length);
+
+            for (var j = 0; j < this.polygons[i].exteriorRing.length; j++) {
+                x = this.polygons[i].exteriorRing[j].x * precisionFactor;
+                y = this.polygons[i].exteriorRing[j].y * precisionFactor;
+
+                twkb.writeVarInt(ZigZag.encode(x - lastX));
+                twkb.writeVarInt(ZigZag.encode(y - lastY));
+
+                lastX = x;
+                lastY = y;
+            }
+
+            for (j = 0; j < this.polygons[i].interiorRings.length; j++) {
+                twkb.writeVarInt(this.polygons[i].interiorRings[j].length);
+
+                for (var k = 0; k < this.polygons[i].interiorRings[j].length; k++) {
+                    x = this.polygons[i].interiorRings[j][k].x * precisionFactor;
+                    y = this.polygons[i].interiorRings[j][k].y * precisionFactor;
+
+                    twkb.writeVarInt(ZigZag.encode(x - lastX));
+                    twkb.writeVarInt(ZigZag.encode(y - lastY));
+
+                    lastX = x;
+                    lastY = y;
+                }
+            }
+        }
+    }
+
+    return twkb.buffer;
+};
+
 MultiPolygon.prototype._getWkbSize = function () {
     var size = 1 + 4 + 4;
 
@@ -637,7 +1169,19 @@ MultiPolygon.prototype._getWkbSize = function () {
     return size;
 };
 
-},{"./binarywriter":2,"./geometry":3,"./polygon":10,"./types":11,"util":19}],9:[function(require,module,exports){
+MultiPolygon.prototype.toGeoJSON = function () {
+    var geoJSON = {
+        type: Types.geoJSON.MultiPolygon,
+        coordinates: []
+    };
+
+    for (var i = 0; i < this.polygons.length; i++)
+        geoJSON.coordinates.push(this.polygons[i].toGeoJSON().coordinates);
+
+    return geoJSON;
+};
+
+},{"./binarywriter":2,"./geometry":3,"./point":9,"./polygon":10,"./types":11,"./zigzag.js":13,"util":20}],9:[function(require,module,exports){
 module.exports = Point;
 
 var util = require('util');
@@ -645,10 +1189,11 @@ var util = require('util');
 var Geometry = require('./geometry');
 var Types = require('./types');
 var BinaryWriter = require('./binarywriter');
+var ZigZag = require('./zigzag.js');
 
 function Point(x, y) {
     Geometry.call(this);
-    
+
     this.x = x;
     this.y = y;
 }
@@ -658,7 +1203,7 @@ util.inherits(Point, Geometry);
 Point._parseWkt = function (value, options) {
     var point = new Point();
     point.srid = options.srid;
-    
+
     if (value.isMatch(['EMPTY']))
         return point;
 
@@ -678,6 +1223,23 @@ Point._parseWkb = function (value, options) {
     var point = new Point(value.readDouble(), value.readDouble());
     point.srid = options.srid;
     return point;
+};
+
+Point._parseTwkb = function (value, options) {
+    if (options.isEmpty)
+        return new Point();
+
+    var x = ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+    var y = ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+
+    return new Point(x, y);
+};
+
+Point._parseGeoJSON = function (value) {
+    if (value.coordinates.length === 0)
+        return new Point();
+
+    return new Point(value.coordinates[0], value.coordinates[1]);
 };
 
 Point.prototype.toWkt = function () {
@@ -705,6 +1267,23 @@ Point.prototype.toWkb = function () {
     return wkb.buffer;
 };
 
+Point.prototype.toTwkb = function () {
+    var twkb = new BinaryWriter(0, true);
+
+    var precision = 5;
+    var precisionFactor = Math.pow(10, precision);
+    var isEmpty = typeof this.x === 'undefined' && typeof this.y === 'undefined';
+
+    this._writeTwkbHeader(twkb, Types.wkb.Point, precision, isEmpty);
+
+    if (!isEmpty) {
+        twkb.writeVarInt(ZigZag.encode(this.x * precisionFactor));
+        twkb.writeVarInt(ZigZag.encode(this.y * precisionFactor));
+    }
+
+    return twkb.buffer;
+};
+
 Point.prototype._getWkbSize = function () {
     if (typeof this.x === 'undefined' && typeof this.y === 'undefined')
         return 1 + 4 + 4;
@@ -712,7 +1291,20 @@ Point.prototype._getWkbSize = function () {
     return 1 + 4 + 8 + 8;
 };
 
-},{"./binarywriter":2,"./geometry":3,"./types":11,"util":19}],10:[function(require,module,exports){
+Point.prototype.toGeoJSON = function () {
+    var geoJSON = {
+        type: Types.geoJSON.Point
+    };
+
+    if (typeof this.x === 'undefined' && typeof this.y === 'undefined')
+        geoJSON.coordinates = [];
+    else
+        geoJSON.coordinates = [this.x, this.y];
+
+    return geoJSON;
+};
+
+},{"./binarywriter":2,"./geometry":3,"./types":11,"./zigzag.js":13,"util":20}],10:[function(require,module,exports){
 module.exports = Polygon;
 
 var util = require('util');
@@ -721,10 +1313,11 @@ var Geometry = require('./geometry');
 var Types = require('./types');
 var Point = require('./point');
 var BinaryWriter = require('./binarywriter');
+var ZigZag = require('./zigzag');
 
 function Polygon(exteriorRing, interiorRings) {
     Geometry.call(this);
-    
+
     this.exteriorRing = exteriorRing || [];
     this.interiorRings = interiorRings || [];
 }
@@ -776,6 +1369,60 @@ Polygon._parseWkb = function (value, options) {
                 interiorRing.push(new Point(value.readDouble(), value.readDouble()));
 
             polygon.interiorRings.push(interiorRing);
+        }
+    }
+
+    return polygon;
+};
+
+Polygon._parseTwkb = function (value, options) {
+    var polygon = new Polygon();
+
+    if (options.isEmpty)
+        return polygon;
+
+    var x = 0;
+    var y = 0;
+    var ringCount = value.readVarInt();
+    var exteriorRingCount = value.readVarInt();
+
+    for (var i = 0; i < exteriorRingCount; i++) {
+        x += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+        y += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+
+        polygon.exteriorRing.push(new Point(x, y));
+    }
+
+    for (i = 1; i < ringCount; i++) {
+        var interiorRing = [];
+
+        var interiorRingCount = value.readVarInt();
+
+        for (var j = 0; j < interiorRingCount; j++) {
+            x += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+            y += ZigZag.decode(value.readVarInt()) / options.precisionFactor;
+
+            interiorRing.push(new Point(x, y));
+        }
+
+        polygon.interiorRings.push(interiorRing);
+    }
+
+    return polygon;
+};
+
+Polygon._parseGeoJSON = function (value) {
+    var polygon = new Polygon();
+
+    for (var i = 0; i < value.coordinates.length; i++) {
+        if (i > 0)
+            polygon.interiorRings.push([]);
+
+        for (var j = 0; j  < value.coordinates[i].length; j++) {
+            if (i === 0)
+                polygon.exteriorRing.push(new Point(value.coordinates[i][j][0], value.coordinates[i][j][1]));
+            else
+                polygon.interiorRings[i - 1].push(new Point(value.coordinates[i][j][0], value.coordinates[i][j][1]));
         }
     }
 
@@ -846,6 +1493,55 @@ Polygon.prototype.toWkb = function () {
     return wkb.buffer;
 };
 
+Polygon.prototype.toTwkb = function () {
+    var twkb = new BinaryWriter(0, true);
+
+    var precision = 5;
+    var precisionFactor = Math.pow(10, precision);
+    var isEmpty = this.exteriorRing.length === 0;
+
+    this._writeTwkbHeader(twkb, Types.wkb.Polygon, precision, isEmpty);
+
+    if (this.exteriorRing.length > 0) {
+        twkb.writeVarInt(1 + this.interiorRings.length);
+
+        twkb.writeVarInt(this.exteriorRing.length);
+
+        var lastX = 0;
+        var lastY = 0;
+        var x = 0;
+        var y = 0;
+
+        for (var i = 0; i < this.exteriorRing.length; i++) {
+            x = this.exteriorRing[i].x * precisionFactor;
+            y = this.exteriorRing[i].y * precisionFactor;
+
+            twkb.writeVarInt(ZigZag.encode(x - lastX));
+            twkb.writeVarInt(ZigZag.encode(y - lastY));
+
+            lastX = x;
+            lastY = y;
+        }
+
+        for (i = 0; i < this.interiorRings.length; i++) {
+            twkb.writeVarInt(this.interiorRings[i].length);
+
+            for (var j = 0; j < this.interiorRings[i].length; j++) {
+                x = this.interiorRings[i][j].x * precisionFactor;
+                y = this.interiorRings[i][j].y * precisionFactor;
+
+                twkb.writeVarInt(ZigZag.encode(x - lastX));
+                twkb.writeVarInt(ZigZag.encode(y - lastY));
+
+                lastX = x;
+                lastY = y;
+            }
+        }
+    }
+
+    return twkb.buffer;
+};
+
 Polygon.prototype._getWkbSize = function () {
     var size = 1 + 4 + 4;
 
@@ -858,7 +1554,34 @@ Polygon.prototype._getWkbSize = function () {
     return size;
 };
 
-},{"./binarywriter":2,"./geometry":3,"./point":9,"./types":11,"util":19}],11:[function(require,module,exports){
+Polygon.prototype.toGeoJSON = function () {
+    var geoJSON = {
+        type: Types.geoJSON.Polygon,
+        coordinates: []
+    };
+
+    if (this.exteriorRing.length > 0) {
+        var exteriorRing = [];
+
+        for (var i = 0; i < this.exteriorRing.length; i++)
+            exteriorRing.push([this.exteriorRing[i].x, this.exteriorRing[i].y]);
+
+        geoJSON.coordinates.push(exteriorRing);
+    }
+
+    for (var j = 0; j < this.interiorRings.length; j++) {
+        var interiorRing = [];
+
+        for (var k = 0; k < this.interiorRings[j].length; k++)
+            interiorRing.push([this.interiorRings[j][k].x, this.interiorRings[j][k].y]);
+
+        geoJSON.coordinates.push(interiorRing);
+    }
+
+    return geoJSON;
+};
+
+},{"./binarywriter":2,"./geometry":3,"./point":9,"./types":11,"./zigzag":13,"util":20}],11:[function(require,module,exports){
 module.exports = {
     wkt: {
         Point: 'POINT',
@@ -877,8 +1600,18 @@ module.exports = {
         MultiLineString: 5,
         MultiPolygon: 6,
         GeometryCollection: 7
+    },
+    geoJSON: {
+        Point: 'Point',
+        LineString: 'LineString',
+        Polygon: 'Polygon',
+        MultiPoint: 'MultiPoint',
+        MultiLineString: 'MultiLineString',
+        MultiPolygon: 'MultiPolygon',
+        GeometryCollection: 'GeometryCollection'
     }
 };
+
 },{}],12:[function(require,module,exports){
 module.exports = WktParser;
 
@@ -976,6 +1709,16 @@ WktParser.prototype.skipWhitespaces = function () {
 };
 
 },{"./point":9,"./types":11}],13:[function(require,module,exports){
+module.exports = {
+    encode: function (value) {
+        return (value << 1) ^ (value >> 31);
+    },
+    decode: function (value) {
+        return (value >> 1) ^ (-(value & 1));
+    }
+};
+
+},{}],14:[function(require,module,exports){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 ;(function (exports) {
@@ -1101,16 +1844,16 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	exports.fromByteArray = uint8ToBase64
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
-  var e, m,
-      eLen = nBytes * 8 - mLen - 1,
-      eMax = (1 << eLen) - 1,
-      eBias = eMax >> 1,
-      nBits = -7,
-      i = isLE ? (nBytes - 1) : 0,
-      d = isLE ? -1 : 1,
-      s = buffer[offset + i]
+  var e, m
+  var eLen = nBytes * 8 - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var nBits = -7
+  var i = isLE ? (nBytes - 1) : 0
+  var d = isLE ? -1 : 1
+  var s = buffer[offset + i]
 
   i += d
 
@@ -1136,14 +1879,14 @@ exports.read = function (buffer, offset, isLE, mLen, nBytes) {
 }
 
 exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
-  var e, m, c,
-      eLen = nBytes * 8 - mLen - 1,
-      eMax = (1 << eLen) - 1,
-      eBias = eMax >> 1,
-      rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0),
-      i = isLE ? 0 : (nBytes - 1),
-      d = isLE ? 1 : -1,
-      s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
+  var e, m, c
+  var eLen = nBytes * 8 - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0)
+  var i = isLE ? 0 : (nBytes - 1)
+  var d = isLE ? 1 : -1
+  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
 
   value = Math.abs(value)
 
@@ -1187,7 +1930,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 
 /**
  * isArray
@@ -1222,7 +1965,7 @@ module.exports = isArray || function (val) {
   return !! val && '[object Array]' == str.call(val);
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -1247,7 +1990,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -1298,7 +2041,7 @@ process.nextTick = function (fun) {
         }
     }
     queue.push(new Item(fun, args));
-    if (!draining) {
+    if (queue.length === 1 && !draining) {
         setTimeout(drainQueue, 0);
     }
 };
@@ -1339,14 +2082,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -1936,7 +2679,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":18,"_process":17,"inherits":16}],"buffer":[function(require,module,exports){
+},{"./support/isBuffer":19,"_process":18,"inherits":17}],"buffer":[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -1953,7 +2696,6 @@ exports.SlowBuffer = SlowBuffer
 exports.INSPECT_MAX_BYTES = 50
 Buffer.poolSize = 8192 // not used by this implementation
 
-var kMaxLength = 0x3fffffff
 var rootParent = {}
 
 /**
@@ -1990,6 +2732,12 @@ Buffer.TYPED_ARRAY_SUPPORT = (function () {
     return false
   }
 })()
+
+function kMaxLength () {
+  return Buffer.TYPED_ARRAY_SUPPORT
+    ? 0x7fffffff
+    : 0x3fffffff
+}
 
 /**
  * Class: Buffer
@@ -2141,9 +2889,9 @@ function allocate (that, length) {
 function checked (length) {
   // Note: cannot use `length < kMaxLength` here because that fails when
   // length is NaN (which is otherwise coerced to zero.)
-  if (length >= kMaxLength) {
+  if (length >= kMaxLength()) {
     throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
-                         'size: 0x' + kMaxLength.toString(16) + ' bytes')
+                         'size: 0x' + kMaxLength().toString(16) + ' bytes')
   }
   return length | 0
 }
@@ -2235,29 +2983,38 @@ Buffer.concat = function concat (list, length) {
 }
 
 function byteLength (string, encoding) {
-  if (typeof string !== 'string') string = String(string)
+  if (typeof string !== 'string') string = '' + string
 
-  if (string.length === 0) return 0
+  var len = string.length
+  if (len === 0) return 0
 
-  switch (encoding || 'utf8') {
-    case 'ascii':
-    case 'binary':
-    case 'raw':
-      return string.length
-    case 'ucs2':
-    case 'ucs-2':
-    case 'utf16le':
-    case 'utf-16le':
-      return string.length * 2
-    case 'hex':
-      return string.length >>> 1
-    case 'utf8':
-    case 'utf-8':
-      return utf8ToBytes(string).length
-    case 'base64':
-      return base64ToBytes(string).length
-    default:
-      return string.length
+  // Use a for loop to avoid recursion
+  var loweredCase = false
+  for (;;) {
+    switch (encoding) {
+      case 'ascii':
+      case 'binary':
+      // Deprecated
+      case 'raw':
+      case 'raws':
+        return len
+      case 'utf8':
+      case 'utf-8':
+        return utf8ToBytes(string).length
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return len * 2
+      case 'hex':
+        return len >>> 1
+      case 'base64':
+        return base64ToBytes(string).length
+      default:
+        if (loweredCase) return utf8ToBytes(string).length // assume utf8
+        encoding = ('' + encoding).toLowerCase()
+        loweredCase = true
+    }
   }
 }
 Buffer.byteLength = byteLength
@@ -2266,8 +3023,7 @@ Buffer.byteLength = byteLength
 Buffer.prototype.length = undefined
 Buffer.prototype.parent = undefined
 
-// toString(encoding, start=0, end=buffer.length)
-Buffer.prototype.toString = function toString (encoding, start, end) {
+function slowToString (encoding, start, end) {
   var loweredCase = false
 
   start = start | 0
@@ -2308,6 +3064,13 @@ Buffer.prototype.toString = function toString (encoding, start, end) {
         loweredCase = true
     }
   }
+}
+
+Buffer.prototype.toString = function toString () {
+  var length = this.length | 0
+  if (length === 0) return ''
+  if (arguments.length === 0) return utf8Slice(this, 0, length)
+  return slowToString.apply(this, arguments)
 }
 
 Buffer.prototype.equals = function equals (b) {
@@ -3352,7 +4115,7 @@ function decodeUtf8Char (str) {
   }
 }
 
-},{"base64-js":13,"ieee754":14,"is-array":15}],"wkx":[function(require,module,exports){
+},{"base64-js":14,"ieee754":15,"is-array":16}],"wkx":[function(require,module,exports){
 exports.Types = require('./types');
 exports.Geometry = require('./geometry');
 exports.Point = require('./point');
