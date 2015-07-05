@@ -120,13 +120,6 @@ describe('wkx', function () {
                 Geometry.parseGeoJSON({ type: 'TEST' });
             }, /GeometryType TEST not supported/);
         });
-        it('parseTwkb() - bounding box, size, extended precision', function () {
-            assert.deepEqual(Geometry.parseTwkb(new Buffer('a1030ec09a0c0080b51800c09a0c80b518', 'hex')),
-                             new Point(1, 2));
-            assert.deepEqual(Geometry.parseTwkb(
-                             new Buffer('a10bb71cc09a0c0080b51800c0cf240080ea3000c09a0c80b518c0cf2480ea30', 'hex')),
-                             new Point(1, 2));
-        });
     });
 
     function createTest (testKey) {
