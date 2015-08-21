@@ -4244,4 +4244,4 @@ exports.MultiPoint = require('./multipoint');
 exports.MultiLineString = require('./multilinestring');
 exports.MultiPolygon = require('./multipolygon');
 exports.GeometryCollection = require('./geometrycollection');
-},{"./geometry":3,"./geometrycollection":4,"./linestring":5,"./multilinestring":6,"./multipoint":7,"./multipolygon":8,"./point":9,"./polygon":10,"./types":11}]},{},[]);
+},{"./geometry":3,"./geometrycollection":4,"./linestring":5,"./multilinestring":6,"./multipoint":7,"./multipolygon":8,"./point":9,"./polygon":10,"./types":11}]},{},["wkx"]);

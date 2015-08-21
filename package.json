@@ -5,7 +5,7 @@
   "main": "lib/wkx.js",
   "scripts": {
     "test": "jshint . && mocha",
-    "build": "gulp",
+    "build": "browserify -r buffer -r ./lib/wkx.js:wkx ./lib/wkx.js > ./dist/wkx.js && uglifyjs -c -m -- ./dist/wkx.js > ./dist/wkx.min.js",
     "coveralls": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec && cat ./coverage/lcov.info | coveralls && rm -rf ./coverage"
   },
   "author": "Christian Schwarz",
@@ -23,6 +23,7 @@
     "json-stringify-pretty-compact": "^1.0.1",
     "mocha": "^2.2.5",
     "pg": "^4.4.1",
+    "uglify-js": "^2.4.24",
     "vinyl": "^0.5.1"
   },
   "repository": {
