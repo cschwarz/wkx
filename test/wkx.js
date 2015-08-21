@@ -9,7 +9,10 @@ var MultiLineString = require('../lib/multilinestring');
 var MultiPolygon = require('../lib/multipolygon');
 var GeometryCollection = require('../lib/geometrycollection');
 
-var testData = require('./testdata.json');
+var tests = {
+    '2D': require('./testdata.json'),
+    'Z': require('./testdataZ.json')
+};
 
 var assert = require('assert');
 
@@ -126,7 +129,7 @@ describe('wkx', function () {
         });
     });
 
-    function createTest (testKey) {
+    function createTest (testKey, testData) {
         describe(testKey, function () {
             it ('parse(wkt)', function () {
                 assertParseWkt(testData[testKey]);
@@ -173,7 +176,15 @@ describe('wkx', function () {
         });
     }
 
-    for (var testKey in testData) {
-        createTest(testKey);
+    function createTests (testKey, testData) {
+        describe(testKey, function () {
+            for (var testDataKey in testData) {
+                createTest(testDataKey, testData);
+            }
+        });
+    }
+
+    for (var testKey in tests) {
+        createTests(testKey, tests[testKey]);
     }
 });
