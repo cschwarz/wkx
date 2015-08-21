@@ -19,18 +19,22 @@ function assertParseWkt(data) {
 
 function assertParseWkb(data) {
     var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
-    assert.deepEqual(Geometry.parse(new Buffer(data.wkb, 'hex')), eval(geometry));
+    geometry = eval(geometry);
+    geometry.srid = 0;
+    assert.deepEqual(Geometry.parse(new Buffer(data.wkb, 'hex')), geometry);
 }
 
 function assertParseWkbXdr(data) {
     var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
-    assert.deepEqual(Geometry.parse(new Buffer(data.wkbXdr, 'hex')), eval(geometry));
+    geometry = eval(geometry);
+    geometry.srid = 0;
+    assert.deepEqual(Geometry.parse(new Buffer(data.wkbXdr, 'hex')), geometry);
 }
 
 function assertParseEwkt(data) {
-    data.geometry = eval(data.geometry);
-    data.geometry.srid = 4326;
-    assert.deepEqual(Geometry.parse('SRID=4326;' + data.wkt), data.geometry);
+    var geometry = eval(data.geometry);
+    geometry.srid = 4326;
+    assert.deepEqual(Geometry.parse('SRID=4326;' + data.wkt), geometry);
 }
 
 function assertParseEwkb(data) {
@@ -68,15 +72,15 @@ function assertToWkb(data) {
 }
 
 function assertToEwkt(data) {
-    data.geometry = eval(data.geometry);
-    data.geometry.srid = 4326;
-    assert.equal(data.geometry.toEwkt(), 'SRID=4326;' + data.wkt);
+    var geometry = eval(data.geometry);
+    geometry.srid = 4326;
+    assert.equal(geometry.toEwkt(), 'SRID=4326;' + data.wkt);
 }
 
 function assertToEwkb(data) {
-    data.geometry = eval(data.geometry);
-    data.geometry.srid = 4326;
-    assert.equal(data.geometry.toEwkb().toString('hex'), data.ewkb);
+    var geometry = eval(data.geometry);
+    geometry.srid = 4326;
+    assert.equal(geometry.toEwkb().toString('hex'), data.ewkb);
 }
 
 function assertToTwkb(data) {
@@ -84,7 +88,7 @@ function assertToTwkb(data) {
 }
 
 function assertToGeoJSON(data) {
-    assert.deepEqual(data.geometry.toGeoJSON(), data.geoJSON);
+    assert.deepEqual(eval(data.geometry).toGeoJSON(), data.geoJSON);
 }
 
 describe('wkx', function () {
