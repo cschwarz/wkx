@@ -65,11 +65,6 @@ to include it:
 <script src="wkx.js"></script>
 ```
 
-You may also use [RawGit][] as a CDN, so you don't need to copy `wkx` into your project:
-```html
-<script src="https://cdn.rawgit.com/cschwarz/wkx/v0.1.0/dist/wkx.js"></script>
-```
-
 If you use [browserify][] for your project, you can simply `npm install wkx --save`, and just require `wkx` as usual in
 your code.
 
@@ -81,22 +76,18 @@ var wkx = require('wkx');
 
 var geometry = wkx.Geometry.parse('POINT(1 2)');
 
-document.getElementById('output').innerText = JSON.stringify(geometry, null, '  ');
+console.log(geometry.toGeoJSON());
 ```
 
 In addition to the `wkx` module, the browser versions also export `buffer`, which is useful for parsing WKB:
 ```javascript
-var Buffer = require('buffer');
+var Buffer = require('buffer').Buffer;
 var wkx = require('wkx');
 
-var geometry = wkx.Geometry.parse(new Buffer([1,1,0,0,0,0,0,0,0,0,0,240,63,0,0,0,0,0,0,0,64]));
+var geometry = wkx.Geometry.parse(new Buffer('0101000000000000000000f03f0000000000000040', 'hex'));
 
-document.getElementById('output').innerText = JSON.stringify(geometry, null, '  ');
+console.log(geometry.toGeoJSON());
 ```
-
-(`buffer` is also made available by browserify, so it will also work the same way regardless of your choice above)
-
-[RawGit]: http://rawgit.com/
 [browserify]: http://browserify.org/
 
 Todo
