@@ -1,6 +1,6 @@
 {
   "emptyPoint": {
-    "geometry": "new Point()",
+    "geometry": "new Point.Z()",
     "wkbGeometry": "new MultiPoint()",
     "wkt": "POINT Z EMPTY",
     "wkb": "01ec03000000000000",
@@ -11,7 +11,7 @@
     "geoJSON": {"type": "Point", "coordinates": []}
   },
   "point": {
-    "geometry": "new Point(1, 2, 3)",
+    "geometry": "new Point.Z(1, 2, 3)",
     "wkt": "POINT Z (1 2 3)",
     "wkb": "01e9030000000000000000f03f00000000000000400000000000000840",
     "ewkb": "01010000a0e6100000000000000000f03f00000000000000400000000000000840",

@@ -5,6 +5,8 @@ var stringify = require('json-stringify-pretty-compact');
 
 updateTestData('./test/testdata.json');
 updateTestData('./test/testdataZ.json');
+updateTestData('./test/testdataM.json');
+updateTestData('./test/testdataZM.json');
 
 function updateTestData(file) {
     var testdata = JSON.parse(fs.readFileSync(file, { encoding: 'utf8' }));

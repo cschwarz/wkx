@@ -115,7 +115,7 @@ describe('wkx', function () {
             assert.throws(function () { Geometry.parse('TEST'); }, /Expected geometry type/);
             assert.throws(function () { Geometry.parse('POINT)'); }, /Expected group start/);
             assert.throws(function () { Geometry.parse('POINT(1 2'); }, /Expected group end/);
-            assert.throws(function () { Geometry.parse('POINT(1)'); }, /Expected coordinate pair/);
+            assert.throws(function () { Geometry.parse('POINT(1)'); }, /Expected coordinates/);
             assert.throws(function () { Geometry.parse('TEST'); }, /Expected geometry type/);
             assert.throws(function () {
                 Geometry.parse(new Buffer('010800000000000000', 'hex'));
