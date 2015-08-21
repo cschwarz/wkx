@@ -2,6 +2,7 @@
   "emptyPoint": {
     "geometry": "new Point.M()",
     "wkbGeometry": "new MultiPoint()",
+    "geoJSONGeometry": "new Point()",
     "wkt": "POINT M EMPTY",
     "wkb": "01d407000000000000",
     "ewkb": "0104000060e610000000000000",
@@ -12,6 +13,7 @@
   },
   "point": {
     "geometry": "new Point.M(1, 2, 3)",
+    "geoJSONGeometry": "new Point(1, 2)",
     "wkt": "POINT M (1 2 3)",
     "wkb": "01d1070000000000000000f03f00000000000000400000000000000840",
     "ewkb": "0101000060e6100000000000000000f03f00000000000000400000000000000840",
@@ -22,6 +24,7 @@
   },
   "emptyLineString": {
     "geometry": "new LineString.M()",
+    "geoJSONGeometry": "new LineString()",
     "wkt": "LINESTRING M EMPTY",
     "wkb": "01d207000000000000",
     "ewkb": "0102000060e610000000000000",
@@ -32,6 +35,7 @@
   },
   "lineString": {
     "geometry": "new LineString.M([new Point.M(1, 2, 1), new Point.M(3, 4, 2)])",
+    "geoJSONGeometry": "new LineString([new Point(1, 2), new Point(3, 4)])",
     "wkt": "LINESTRING M (1 2 1,3 4 2)",
     "wkb": "01d207000002000000000000000000f03f0000000000000040000000000000f03f000000000000084000000000000010400000000000000040",
     "ewkb": "0102000060e610000002000000000000000000f03f0000000000000040000000000000f03f000000000000084000000000000010400000000000000040",

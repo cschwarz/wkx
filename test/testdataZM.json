@@ -2,6 +2,7 @@
   "emptyPoint": {
     "geometry": "new Point.ZM()",
     "wkbGeometry": "new MultiPoint()",
+    "geoJSONGeometry": "new Point()",
     "wkt": "POINT ZM EMPTY",
     "wkb": "01bc0b000000000000",
     "ewkb": "01040000e0e610000000000000",
@@ -12,6 +13,7 @@
   },
   "point": {
     "geometry": "new Point.ZM(1, 2, 3, 4)",
+    "geoJSONGeometry": "new Point.Z(1, 2, 3)",
     "wkt": "POINT ZM (1 2 3 4)",
     "wkb": "01b90b0000000000000000f03f000000000000004000000000000008400000000000001040",
     "ewkb": "01010000e0e6100000000000000000f03f000000000000004000000000000008400000000000001040",
@@ -22,6 +24,7 @@
   },
   "emptyLineString": {
     "geometry": "new LineString.ZM()",
+    "geoJSONGeometry": "new LineString()",
     "wkt": "LINESTRING ZM EMPTY",
     "wkb": "01ba0b000000000000",
     "ewkb": "01020000e0e610000000000000",
@@ -32,6 +35,7 @@
   },
   "lineString": {
     "geometry": "new LineString.ZM([new Point(1, 2, 1, 2), new Point(3, 4, 3, 4)])",
+    "geoJSONGeometry": "new LineString.Z([new Point(1, 2, 1), new Point(3, 4, 3)])",
     "wkt": "LINESTRING ZM (1 2 1 2,3 4 3 4)",
     "wkb": "01ba0b000002000000000000000000f03f0000000000000040000000000000f03f00000000000000400000000000000840000000000000104000000000000008400000000000001040",
     "ewkb": "01020000e0e610000002000000000000000000f03f0000000000000040000000000000f03f00000000000000400000000000000840000000000000104000000000000008400000000000001040",

@@ -1,6 +1,7 @@
 {
   "emptyPoint": {
     "geometry": "new Point.Z()",
+    "geoJSONGeometry": "new Point()",
     "wkbGeometry": "new MultiPoint()",
     "wkt": "POINT Z EMPTY",
     "wkb": "01ec03000000000000",
@@ -22,6 +23,7 @@
   },
   "emptyLineString": {
     "geometry": "new LineString.Z()",
+    "geoJSONGeometry": "new LineString()",
     "wkt": "LINESTRING Z EMPTY",
     "wkb": "01ea03000000000000",
     "ewkb": "01020000a0e610000000000000",
