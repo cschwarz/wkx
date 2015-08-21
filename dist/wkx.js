@@ -299,24 +299,37 @@ Geometry.parseTwkb = function (value) {
 };
 
 Geometry.parseGeoJSON = function (value) {
+    var geometry;
+
     switch (value.type) {
     case Types.geoJSON.Point:
-        return Point._parseGeoJSON(value);
+        geometry = Point._parseGeoJSON(value); break;
     case Types.geoJSON.LineString:
-        return LineString._parseGeoJSON(value);
+        geometry = LineString._parseGeoJSON(value); break;
     case Types.geoJSON.Polygon:
-        return Polygon._parseGeoJSON(value);
+        geometry = Polygon._parseGeoJSON(value); break;
     case Types.geoJSON.MultiPoint:
-        return MultiPoint._parseGeoJSON(value);
+        geometry = MultiPoint._parseGeoJSON(value); break;
     case Types.geoJSON.MultiLineString:
-        return MultiLineString._parseGeoJSON(value);
+        geometry = MultiLineString._parseGeoJSON(value); break;
     case Types.geoJSON.MultiPolygon:
-        return MultiPolygon._parseGeoJSON(value);
+        geometry = MultiPolygon._parseGeoJSON(value); break;
     case Types.geoJSON.GeometryCollection:
-        return GeometryCollection._parseGeoJSON(value);
+        geometry = GeometryCollection._parseGeoJSON(value); break;
     default:
         throw new Error('GeometryType ' + value.type + ' not supported');
     }
+
+    if (value.crs && value.crs.type && value.crs.type === 'name' && value.crs.properties && value.crs.properties.name) {
+        var crs = value.crs.properties.name;
+
+        if (crs.indexOf('EPSG:') === 0)
+            geometry.srid = parseInt(crs.substring(5));
+        else if (crs.indexOf('urn:ogc:def:crs:EPSG::') === 0)
+            geometry.srid = parseInt(crs.substring(22));
+    }
+
+    return geometry;
 };
 
 Geometry.prototype.toEwkt = function () {
@@ -342,6 +355,33 @@ Geometry.prototype._writeTwkbHeader = function (twkb, geometryType, precision, i
 
     twkb.writeUInt8(type);
     twkb.writeUInt8(metadataHeader);
+};
+
+Geometry.prototype.toGeoJSON = function (options) {
+    var geoJSON = {};
+
+    if (this.srid) {
+        if (options) {
+            if (options.shortCrs) {
+                geoJSON.crs = {
+                    type: 'name',
+                    properties: {
+                        name: 'EPSG:' + this.srid
+                    }
+                };
+            }
+            else if (options.longCrs) {
+                geoJSON.crs = {
+                    type: 'name',
+                    properties: {
+                        name: 'urn:ogc:def:crs:EPSG::' + this.srid
+                    }
+                };
+            }
+        }
+    }
+
+    return geoJSON;
 };
 
 }).call(this,require("buffer").Buffer)
@@ -473,11 +513,10 @@ GeometryCollection.prototype._getWkbSize = function () {
     return size;
 };
 
-GeometryCollection.prototype.toGeoJSON = function () {
-    var geoJSON = {
-        type: Types.geoJSON.GeometryCollection,
-        geometries: []
-    };
+GeometryCollection.prototype.toGeoJSON = function (options) {
+    var geoJSON = Geometry.prototype.toGeoJSON.call(this, options);
+    geoJSON.type = Types.geoJSON.GeometryCollection;
+    geoJSON.geometries = [];
 
     for (var i = 0; i < this.geometries.length; i++)
         geoJSON.geometries.push(this.geometries[i].toGeoJSON());
@@ -627,11 +666,10 @@ LineString.prototype._getWkbSize = function () {
     return 1 + 4 + 4 + (this.points.length * 16);
 };
 
-LineString.prototype.toGeoJSON = function () {
-    var geoJSON = {
-        type: Types.geoJSON.LineString,
-        coordinates: []
-    };
+LineString.prototype.toGeoJSON = function (options) {
+    var geoJSON = Geometry.prototype.toGeoJSON.call(this, options);
+    geoJSON.type = Types.geoJSON.LineString;
+    geoJSON.coordinates = [];
 
     for (var i = 0; i < this.points.length; i++)
         geoJSON.coordinates.push([this.points[i].x, this.points[i].y]);
@@ -798,11 +836,10 @@ MultiLineString.prototype._getWkbSize = function () {
     return size;
 };
 
-MultiLineString.prototype.toGeoJSON = function () {
-    var geoJSON = {
-        type: Types.geoJSON.MultiLineString,
-        coordinates: []
-    };
+MultiLineString.prototype.toGeoJSON = function (options) {
+    var geoJSON = Geometry.prototype.toGeoJSON.call(this, options);
+    geoJSON.type = Types.geoJSON.MultiLineString;
+    geoJSON.coordinates = [];
 
     for (var i = 0; i < this.lineStrings.length; i++)
         geoJSON.coordinates.push(this.lineStrings[i].toGeoJSON().coordinates);
@@ -947,11 +984,10 @@ MultiPoint.prototype._getWkbSize = function () {
     return 1 + 4 + 4 + (this.points.length * 21);
 };
 
-MultiPoint.prototype.toGeoJSON = function () {
-    var geoJSON = {
-        type: Types.geoJSON.MultiPoint,
-        coordinates: []
-    };
+MultiPoint.prototype.toGeoJSON = function (options) {
+    var geoJSON = Geometry.prototype.toGeoJSON.call(this, options);
+    geoJSON.type = Types.geoJSON.MultiPoint;
+    geoJSON.coordinates = [];
 
     for (var i = 0; i < this.points.length; i++)
         geoJSON.coordinates.push(this.points[i].toGeoJSON().coordinates);
@@ -1169,11 +1205,10 @@ MultiPolygon.prototype._getWkbSize = function () {
     return size;
 };
 
-MultiPolygon.prototype.toGeoJSON = function () {
-    var geoJSON = {
-        type: Types.geoJSON.MultiPolygon,
-        coordinates: []
-    };
+MultiPolygon.prototype.toGeoJSON = function (options) {
+    var geoJSON = Geometry.prototype.toGeoJSON.call(this, options);
+    geoJSON.type = Types.geoJSON.MultiPolygon;
+    geoJSON.coordinates = [];
 
     for (var i = 0; i < this.polygons.length; i++)
         geoJSON.coordinates.push(this.polygons[i].toGeoJSON().coordinates);
@@ -1291,10 +1326,9 @@ Point.prototype._getWkbSize = function () {
     return 1 + 4 + 8 + 8;
 };
 
-Point.prototype.toGeoJSON = function () {
-    var geoJSON = {
-        type: Types.geoJSON.Point
-    };
+Point.prototype.toGeoJSON = function (options) {
+    var geoJSON = Geometry.prototype.toGeoJSON.call(this, options);
+    geoJSON.type = Types.geoJSON.Point;
 
     if (typeof this.x === 'undefined' && typeof this.y === 'undefined')
         geoJSON.coordinates = [];
@@ -1554,11 +1588,10 @@ Polygon.prototype._getWkbSize = function () {
     return size;
 };
 
-Polygon.prototype.toGeoJSON = function () {
-    var geoJSON = {
-        type: Types.geoJSON.Polygon,
-        coordinates: []
-    };
+Polygon.prototype.toGeoJSON = function (options) {
+    var geoJSON = Geometry.prototype.toGeoJSON.call(this, options);
+    geoJSON.type = Types.geoJSON.Polygon;
+    geoJSON.coordinates = [];
 
     if (this.exteriorRing.length > 0) {
         var exteriorRing = [];
@@ -2706,28 +2739,35 @@ var rootParent = {}
  * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
  * Opera 11.6+, iOS 4.2+.
  *
+ * Due to various browser bugs, sometimes the Object implementation will be used even
+ * when the browser supports typed arrays.
+ *
  * Note:
  *
- * - Implementation must support adding new properties to `Uint8Array` instances.
- *   Firefox 4-29 lacked support, fixed in Firefox 30+.
- *   See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
+ *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
+ *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
  *
- *  - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
+ *   - Safari 5-7 lacks support for changing the `Object.prototype.constructor` property
+ *     on objects.
  *
- *  - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
- *    incorrect length in some situations.
+ *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
  *
- * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they will
- * get the Object implementation, which is slower but will work correctly.
+ *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
+ *     incorrect length in some situations.
+
+ * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
+ * get the Object implementation, which is slower but behaves correctly.
  */
 Buffer.TYPED_ARRAY_SUPPORT = (function () {
+  function Bar () {}
   try {
-    var buf = new ArrayBuffer(0)
-    var arr = new Uint8Array(buf)
+    var arr = new Uint8Array(1)
     arr.foo = function () { return 42 }
+    arr.constructor = Bar
     return arr.foo() === 42 && // typed array instances can be augmented
+        arr.constructor === Bar && // constructor can be set
         typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
-        new Uint8Array(1).subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
+        arr.subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
   } catch (e) {
     return false
   }
@@ -2805,8 +2845,13 @@ function fromObject (that, object) {
     throw new TypeError('must start with number, buffer, array or string')
   }
 
-  if (typeof ArrayBuffer !== 'undefined' && object.buffer instanceof ArrayBuffer) {
-    return fromTypedArray(that, object)
+  if (typeof ArrayBuffer !== 'undefined') {
+    if (object.buffer instanceof ArrayBuffer) {
+      return fromTypedArray(that, object)
+    }
+    if (object instanceof ArrayBuffer) {
+      return fromArrayBuffer(that, object)
+    }
   }
 
   if (object.length) return fromArrayLike(that, object)
@@ -2839,6 +2884,18 @@ function fromTypedArray (that, array) {
   // of the old Buffer constructor.
   for (var i = 0; i < length; i += 1) {
     that[i] = array[i] & 255
+  }
+  return that
+}
+
+function fromArrayBuffer (that, array) {
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    // Return an augmented `Uint8Array` instance, for best performance
+    array.byteLength
+    that = Buffer._augment(new Uint8Array(array))
+  } else {
+    // Fallback: Return an object instance of the Buffer class
+    that = fromTypedArray(that, new Uint8Array(array))
   }
   return that
 }
@@ -2960,8 +3017,6 @@ Buffer.concat = function concat (list, length) {
 
   if (list.length === 0) {
     return new Buffer(0)
-  } else if (list.length === 1) {
-    return list[0]
   }
 
   var i
@@ -3136,13 +3191,13 @@ Buffer.prototype.indexOf = function indexOf (val, byteOffset) {
   throw new TypeError('val must be string, number or Buffer')
 }
 
-// `get` will be removed in Node 0.13+
+// `get` is deprecated
 Buffer.prototype.get = function get (offset) {
   console.log('.get() is deprecated. Access using array indexes instead.')
   return this.readUInt8(offset)
 }
 
-// `set` will be removed in Node 0.13+
+// `set` is deprecated
 Buffer.prototype.set = function set (v, offset) {
   console.log('.set() is deprecated. Access using array indexes instead.')
   return this.writeUInt8(v, offset)
@@ -3283,20 +3338,84 @@ function base64Slice (buf, start, end) {
 }
 
 function utf8Slice (buf, start, end) {
-  var res = ''
-  var tmp = ''
   end = Math.min(buf.length, end)
+  var firstByte
+  var secondByte
+  var thirdByte
+  var fourthByte
+  var bytesPerSequence
+  var tempCodePoint
+  var codePoint
+  var res = []
+  var i = start
 
-  for (var i = start; i < end; i++) {
-    if (buf[i] <= 0x7F) {
-      res += decodeUtf8Char(tmp) + String.fromCharCode(buf[i])
-      tmp = ''
+  for (; i < end; i += bytesPerSequence) {
+    firstByte = buf[i]
+    codePoint = 0xFFFD
+
+    if (firstByte > 0xEF) {
+      bytesPerSequence = 4
+    } else if (firstByte > 0xDF) {
+      bytesPerSequence = 3
+    } else if (firstByte > 0xBF) {
+      bytesPerSequence = 2
     } else {
-      tmp += '%' + buf[i].toString(16)
+      bytesPerSequence = 1
     }
+
+    if (i + bytesPerSequence <= end) {
+      switch (bytesPerSequence) {
+        case 1:
+          if (firstByte < 0x80) {
+            codePoint = firstByte
+          }
+          break
+        case 2:
+          secondByte = buf[i + 1]
+          if ((secondByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0x1F) << 0x6 | (secondByte & 0x3F)
+            if (tempCodePoint > 0x7F) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 3:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | (thirdByte & 0x3F)
+            if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 4:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          fourthByte = buf[i + 3]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | (fourthByte & 0x3F)
+            if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
+              codePoint = tempCodePoint
+            }
+          }
+      }
+    }
+
+    if (codePoint === 0xFFFD) {
+      // we generated an invalid codePoint so make sure to only advance by 1 byte
+      bytesPerSequence = 1
+    } else if (codePoint > 0xFFFF) {
+      // encode to utf16 (surrogate pair dance)
+      codePoint -= 0x10000
+      res.push(codePoint >>> 10 & 0x3FF | 0xD800)
+      codePoint = 0xDC00 | codePoint & 0x3FF
+    }
+
+    res.push(codePoint)
   }
 
-  return res + decodeUtf8Char(tmp)
+  return String.fromCharCode.apply(String, res)
 }
 
 function asciiSlice (buf, start, end) {
@@ -3831,9 +3950,16 @@ Buffer.prototype.copy = function copy (target, targetStart, start, end) {
   }
 
   var len = end - start
+  var i
 
-  if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
-    for (var i = 0; i < len; i++) {
+  if (this === target && start < targetStart && targetStart < end) {
+    // descending copy from end
+    for (i = len - 1; i >= 0; i--) {
+      target[i + targetStart] = this[i + start]
+    }
+  } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
+    // ascending copy from start
+    for (i = 0; i < len; i++) {
       target[i + targetStart] = this[i + start]
     }
   } else {
@@ -3909,7 +4035,7 @@ Buffer._augment = function _augment (arr) {
   // save reference to original Uint8Array set method before overwriting
   arr._set = arr.set
 
-  // deprecated, will be removed in node 0.13+
+  // deprecated
   arr.get = BP.get
   arr.set = BP.set
 
@@ -3965,7 +4091,7 @@ Buffer._augment = function _augment (arr) {
   return arr
 }
 
-var INVALID_BASE64_RE = /[^+\/0-9A-z\-]/g
+var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g
 
 function base64clean (str) {
   // Node strips out invalid characters like \n and \t from the string, base64-js does not
@@ -3995,47 +4121,48 @@ function utf8ToBytes (string, units) {
   var length = string.length
   var leadSurrogate = null
   var bytes = []
-  var i = 0
 
-  for (; i < length; i++) {
+  for (var i = 0; i < length; i++) {
     codePoint = string.charCodeAt(i)
 
     // is surrogate component
     if (codePoint > 0xD7FF && codePoint < 0xE000) {
       // last char was a lead
-      if (leadSurrogate) {
-        // 2 leads in a row
-        if (codePoint < 0xDC00) {
-          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
-          leadSurrogate = codePoint
-          continue
-        } else {
-          // valid surrogate pair
-          codePoint = leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00 | 0x10000
-          leadSurrogate = null
-        }
-      } else {
+      if (!leadSurrogate) {
         // no lead yet
-
         if (codePoint > 0xDBFF) {
           // unexpected trail
           if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
           continue
+
         } else if (i + 1 === length) {
           // unpaired lead
           if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
           continue
-        } else {
-          // valid lead
-          leadSurrogate = codePoint
-          continue
         }
+
+        // valid lead
+        leadSurrogate = codePoint
+
+        continue
       }
+
+      // 2 leads in a row
+      if (codePoint < 0xDC00) {
+        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+        leadSurrogate = codePoint
+        continue
+      }
+
+      // valid surrogate pair
+      codePoint = leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00 | 0x10000
+
     } else if (leadSurrogate) {
       // valid bmp char, but last char was a lead
       if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
-      leadSurrogate = null
     }
+
+    leadSurrogate = null
 
     // encode utf8
     if (codePoint < 0x80) {
@@ -4054,7 +4181,7 @@ function utf8ToBytes (string, units) {
         codePoint >> 0x6 & 0x3F | 0x80,
         codePoint & 0x3F | 0x80
       )
-    } else if (codePoint < 0x200000) {
+    } else if (codePoint < 0x110000) {
       if ((units -= 4) < 0) break
       bytes.push(
         codePoint >> 0x12 | 0xF0,
@@ -4105,14 +4232,6 @@ function blitBuffer (src, dst, offset, length) {
     dst[i + offset] = src[i]
   }
   return i
-}
-
-function decodeUtf8Char (str) {
-  try {
-    return decodeURIComponent(str)
-  } catch (err) {
-    return String.fromCharCode(0xFFFD) // UTF 8 invalid char
-  }
 }
 
 },{"base64-js":14,"ieee754":15,"is-array":16}],"wkx":[function(require,module,exports){
