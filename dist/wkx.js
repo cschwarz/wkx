@@ -393,7 +393,6 @@ var util = require('util');
 var Types = require('./types');
 var Geometry = require('./geometry');
 var BinaryWriter = require('./binarywriter');
-var ZigZag = require('./zigzag.js');
 
 function GeometryCollection(geometries) {
     Geometry.call(this);
@@ -489,7 +488,6 @@ GeometryCollection.prototype.toTwkb = function () {
     var twkb = new BinaryWriter(0, true);
 
     var precision = 5;
-    var precisionFactor = Math.pow(10, precision);
     var isEmpty = this.geometries.length === 0;
 
     this._writeTwkbHeader(twkb, Types.wkb.GeometryCollection, precision, isEmpty);
@@ -524,7 +522,7 @@ GeometryCollection.prototype.toGeoJSON = function (options) {
     return geoJSON;
 };
 
-},{"./binarywriter":2,"./geometry":3,"./types":11,"./zigzag.js":13,"util":20}],5:[function(require,module,exports){
+},{"./binarywriter":2,"./geometry":3,"./types":11,"util":20}],5:[function(require,module,exports){
 module.exports = LineString;
 
 var util = require('util');
