@@ -11,7 +11,9 @@ var GeometryCollection = require('../lib/geometrycollection');
 
 var tests = {
     '2D': require('./testdata.json'),
-    'Z': require('./testdataZ.json')
+    'Z': require('./testdataZ.json'),
+    'M': require('./testdataM.json'),
+    'ZM': require('./testdataZM.json')
 };
 
 var assert = require('assert');
@@ -23,14 +25,14 @@ function assertParseWkt(data) {
 function assertParseWkb(data) {
     var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
     geometry = eval(geometry);
-    geometry.srid = 0;
+    geometry.srid = undefined;
     assert.deepEqual(Geometry.parse(new Buffer(data.wkb, 'hex')), geometry);
 }
 
 function assertParseWkbXdr(data) {
     var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
     geometry = eval(geometry);
-    geometry.srid = 0;
+    geometry.srid = undefined;
     assert.deepEqual(Geometry.parse(new Buffer(data.wkbXdr, 'hex')), geometry);
 }
 
@@ -56,13 +58,14 @@ function assertParseEwkbXdr(data) {
 
 function assertParseTwkb(data) {
     var geometry = eval(data.geometry);
-    geometry.srid = 0;
+    geometry.srid = undefined;
     assert.deepEqual(Geometry.parseTwkb(new Buffer(data.twkb, 'hex')), geometry);
 }
 
 function assertParseGeoJSON(data) {
-    var geometry = eval(data.geometry);
-    geometry.srid = 0;
+    var geometry = data.geoJSONGeometry ? data.geoJSONGeometry : data.geometry;
+    geometry = eval(geometry);    
+    geometry.srid = undefined;
     assert.deepEqual(Geometry.parseGeoJSON(data.geoJSON), geometry);
 }
 
