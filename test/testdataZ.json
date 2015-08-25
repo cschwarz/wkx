@@ -44,6 +44,7 @@
   },
   "emptyPolygon": {
     "geometry": "new Polygon.Z()",
+    "geoJSONGeometry": "new Polygon()",
     "wkt": "POLYGON Z EMPTY",
     "wkb": "01eb03000000000000",
     "ewkb": "01030000a0e610000000000000",
