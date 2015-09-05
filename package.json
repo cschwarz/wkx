@@ -14,10 +14,10 @@
     "async": "^1.4.2",
     "browserify": "^11.0.1",
     "coveralls": "^2.11.4",
-    "istanbul": "^0.3.18",
+    "istanbul": "^0.3.19",
     "jshint": "^2.8.0",
     "json-stringify-pretty-compact": "^1.0.1",
-    "mocha": "^2.2.5",
+    "mocha": "^2.3.0",
     "pg": "^4.4.1",
     "uglify-js": "^2.4.24"
   },
