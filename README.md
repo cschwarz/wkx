@@ -84,7 +84,8 @@ In addition to the `wkx` module, the browser versions also export `buffer`, whic
 var Buffer = require('buffer').Buffer;
 var wkx = require('wkx');
 
-var geometry = wkx.Geometry.parse(new Buffer('0101000000000000000000f03f0000000000000040', 'hex'));
+var wkbBuffer = new Buffer('0101000000000000000000f03f0000000000000040', 'hex');
+var geometry = wkx.Geometry.parse(wkbBuffer);
 
 console.log(geometry.toGeoJSON());
 ```
