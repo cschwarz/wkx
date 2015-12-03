@@ -64,7 +64,7 @@ function assertParseTwkb(data) {
 
 function assertParseGeoJSON(data) {
     var geometry = data.geoJSONGeometry ? data.geoJSONGeometry : data.geometry;
-    geometry = eval(geometry);    
+    geometry = eval(geometry);
     geometry.srid = undefined;
     assert.deepEqual(Geometry.parseGeoJSON(data.geoJSON), geometry);
 }
@@ -112,6 +112,15 @@ describe('wkx', function () {
             assert.deepEqual(Geometry.parse('POINT(-1.2 -3.4)'), new Point(-1.2, -3.4));
             assert.deepEqual(Geometry.parse('POINT(-1.2 3.4)'), new Point(-1.2, 3.4));
             assert.deepEqual(Geometry.parse('POINT(1.2 -3.4)'), new Point(1.2, -3.4));
+
+            assert.deepEqual(Geometry.parse('MULTIPOINT(1 2,3 4)'),
+                                            new MultiPoint([new Point(1, 2), new Point(3, 4)]));
+            assert.deepEqual(Geometry.parse('MULTIPOINT(1 2, 3 4)'),
+                                            new MultiPoint([new Point(1, 2), new Point(3, 4)]));
+            assert.deepEqual(Geometry.parse('MULTIPOINT((1 2),(3 4))'),
+                                            new MultiPoint([new Point(1, 2), new Point(3, 4)]));
+            assert.deepEqual(Geometry.parse('MULTIPOINT((1 2), (3 4))'),
+                                            new MultiPoint([new Point(1, 2), new Point(3, 4)]));
         });
         it('parse() - invalid input', function () {
             assert.throws(Geometry.parse, /first argument must be a string or Buffer/);
