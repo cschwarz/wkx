@@ -90,8 +90,3 @@ var geometry = wkx.Geometry.parse(wkbBuffer);
 console.log(geometry.toGeoJSON());
 ```
 [browserify]: http://browserify.org/
-
-Todo
-----
-
-- Add support for parsing and serializing 3D/4D geometries (Z, M and ZM)

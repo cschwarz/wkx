@@ -1,6 +1,6 @@
 {
   "name": "wkx",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A WKT/WKB/EWKT/EWKB/TWKB/GeoJSON parser and serializer",
   "homepage": "https://github.com/cschwarz/wkx",
   "authors": [
