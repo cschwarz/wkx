@@ -1,13 +1,13 @@
 {
   "emptyPoint": {
     "geometry": "new Point.M()",
-    "wkbGeometry": "new MultiPoint.M()",
+    "wkbGeometry": "new Point.M(NaN, NaN, NaN)",
     "geoJSONGeometry": "new Point()",
     "wkt": "POINT M EMPTY",
-    "wkb": "01d407000000000000",
-    "ewkb": "0104000060e610000000000000",
-    "wkbXdr": "00000007d400000000",
-    "ewkbXdr": "0060000004000010e600000000",
+    "wkb": "01d1070000000000000000f87f000000000000f87f000000000000f87f",
+    "ewkb": "0101000060e6100000000000000000f87f000000000000f87f000000000000f87f",
+    "wkbXdr": "00000007d17ff80000000000007ff80000000000007ff8000000000000",
+    "ewkbXdr": "0060000001000010e67ff80000000000007ff80000000000007ff8000000000000",
     "twkb": "a11802",
     "geoJSON": {"type": "Point", "coordinates": []}
   },

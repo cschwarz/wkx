@@ -1,5 +1,7 @@
 /* jshint evil: true */
 
+var eql = require('deep-eql');
+
 var Geometry = require('../lib/geometry');
 var Point = require('../lib/point');
 var LineString = require('../lib/linestring');
@@ -19,54 +21,54 @@ var tests = {
 var assert = require('assert');
 
 function assertParseWkt(data) {
-    assert.deepEqual(Geometry.parse(data.wkt), eval(data.geometry));
+    assert(eql(Geometry.parse(data.wkt), eval(data.geometry)));
 }
 
 function assertParseWkb(data) {
     var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
     geometry = eval(geometry);
     geometry.srid = undefined;
-    assert.deepEqual(Geometry.parse(new Buffer(data.wkb, 'hex')), geometry);
+    assert(eql(Geometry.parse(new Buffer(data.wkb, 'hex')), geometry));
 }
 
 function assertParseWkbXdr(data) {
     var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
     geometry = eval(geometry);
     geometry.srid = undefined;
-    assert.deepEqual(Geometry.parse(new Buffer(data.wkbXdr, 'hex')), geometry);
+    assert(eql(Geometry.parse(new Buffer(data.wkbXdr, 'hex')), geometry));
 }
 
 function assertParseEwkt(data) {
     var geometry = eval(data.geometry);
     geometry.srid = 4326;
-    assert.deepEqual(Geometry.parse('SRID=4326;' + data.wkt), geometry);
+    assert(eql(Geometry.parse('SRID=4326;' + data.wkt), geometry));
 }
 
 function assertParseEwkb(data) {
     var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
     geometry = eval(geometry);
     geometry.srid = 4326;
-    assert.deepEqual(Geometry.parse(new Buffer(data.ewkb, 'hex')), geometry);
+    assert(eql(Geometry.parse(new Buffer(data.ewkb, 'hex')), geometry));
 }
 
 function assertParseEwkbXdr(data) {
     var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
     geometry = eval(geometry);
     geometry.srid = 4326;
-    assert.deepEqual(Geometry.parse(new Buffer(data.ewkbXdr, 'hex')), geometry);
+    assert(eql(Geometry.parse(new Buffer(data.ewkbXdr, 'hex')), geometry));
 }
 
 function assertParseTwkb(data) {
     var geometry = eval(data.geometry);
     geometry.srid = undefined;
-    assert.deepEqual(Geometry.parseTwkb(new Buffer(data.twkb, 'hex')), geometry);
+    assert(eql(Geometry.parseTwkb(new Buffer(data.twkb, 'hex')), geometry));
 }
 
 function assertParseGeoJSON(data) {
     var geometry = data.geoJSONGeometry ? data.geoJSONGeometry : data.geometry;
     geometry = eval(geometry);
     geometry.srid = undefined;
-    assert.deepEqual(Geometry.parseGeoJSON(data.geoJSON), geometry);
+    assert(eql(Geometry.parseGeoJSON(data.geoJSON), geometry));
 }
 
 function assertToWkt(data) {
@@ -94,7 +96,7 @@ function assertToTwkb(data) {
 }
 
 function assertToGeoJSON(data) {
-    assert.deepEqual(eval(data.geometry).toGeoJSON(), data.geoJSON);
+    assert(eql(eval(data.geometry).toGeoJSON(), data.geoJSON));
 }
 
 describe('wkx', function () {
