@@ -58,6 +58,18 @@ function assertParseEwkbXdr(data) {
     assert(eql(Geometry.parse(new Buffer(data.ewkbXdr, 'hex')), geometry));
 }
 
+function assertParseEwkbNoSrid(data) {
+    var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
+    geometry = eval(geometry);
+    assert(eql(Geometry.parse(new Buffer(data.ewkbNoSrid, 'hex')), geometry));
+}
+
+function assertParseEwkbXdrNoSrid(data) {
+    var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
+    geometry = eval(geometry);
+    assert(eql(Geometry.parse(new Buffer(data.ewkbXdrNoSrid, 'hex')), geometry));
+}
+
 function assertParseTwkb(data) {
     var geometry = eval(data.geometry);
     geometry.srid = undefined;
@@ -163,11 +175,11 @@ describe('wkx', function () {
             it ('parse(ewkb xdr)', function () {
                 assertParseEwkbXdr(testData[testKey]);
             });
-            it ('parseTwkb()', function () {
-                assertParseTwkb(testData[testKey]);
+            it ('parse(ewkb no srid)', function () {
+                assertParseEwkbNoSrid(testData[testKey]);
             });
-            it ('parseGeoJSON()', function () {
-                assertParseGeoJSON(testData[testKey]);
+            it ('parse(ewkb xdr no srid)', function () {
+                assertParseEwkbXdrNoSrid(testData[testKey]);
             });
             it ('toWkt()', function () {
                 assertToWkt(testData[testKey]);

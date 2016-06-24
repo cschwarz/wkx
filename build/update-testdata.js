@@ -20,6 +20,8 @@ function updateTestData(file) {
                          'encode(ST_AsEWKB(ST_GeomFromText($1, 4326)), \'hex\') ewkb, ' +
                          'encode(ST_AsBinary(ST_GeomFromText($1), \'xdr\'), \'hex\') wkbxdr, ' +
                          'encode(ST_AsEWKB(ST_GeomFromText($1, 4326), \'xdr\'), \'hex\') ewkbxdr, ' +
+                         'encode(ST_AsEWKB(ST_GeomFromText($1)), \'hex\') ewkbnosrid, ' +
+                         'encode(ST_AsEWKB(ST_GeomFromText($1), \'xdr\'), \'hex\') ewkbxdrnosrid, ' +
                          'encode(ST_AsTWKB(ST_GeomFromText($1, 4326)), \'hex\') twkb, ' +
                          'ST_AsGeoJSON(ST_GeomFromText($1, 4326)) geojson', [value.wkt], function (err, result) {
 
@@ -27,6 +29,8 @@ function updateTestData(file) {
                 value.ewkb = result.rows[0].ewkb;
                 value.wkbXdr = result.rows[0].wkbxdr;
                 value.ewkbXdr = result.rows[0].ewkbxdr;
+                value.ewkbNoSrid = result.rows[0].ewkbnosrid;
+                value.ewkbXdrNoSrid = result.rows[0].ewkbxdrnosrid;
                 value.twkb = result.rows[0].twkb;
                 value.geoJSON = JSON.parse(result.rows[0].geojson);
 
