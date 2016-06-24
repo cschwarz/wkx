@@ -8,5 +8,7 @@
 	"trailing": true,
 	"white": true,
 	"smarttabs": false,
-	"maxlen": 120
+	"maxlen": 120,
+	"undef": true,
+	"unused": true
 }

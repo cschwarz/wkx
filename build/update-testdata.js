@@ -15,6 +15,11 @@ function updateTestData(file) {
 
     var client = new pg.Client(connectionString);
     client.connect(function(err) {
+        if (err) {
+            console.log(err);
+            return;
+        }
+
         async.forEachOf(testdata, function (value, key, callback) {
             client.query('SELECT encode(ST_AsBinary(ST_GeomFromText($1)), \'hex\') wkb, ' +
                          'encode(ST_AsEWKB(ST_GeomFromText($1, 4326)), \'hex\') ewkb, ' +

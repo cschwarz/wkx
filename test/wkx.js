@@ -1,4 +1,4 @@
-/* jshint evil: true */
+/* jshint evil: true, unused: false */
 
 var eql = require('deep-eql');
 
