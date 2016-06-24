@@ -181,6 +181,12 @@ describe('wkx', function () {
             it ('parse(ewkb xdr no srid)', function () {
                 assertParseEwkbXdrNoSrid(testData[testKey]);
             });
+            it ('parseTwkb()', function () {
+                assertParseTwkb(testData[testKey]);
+            });
+            it ('parseGeoJSON()', function () {
+                assertParseGeoJSON(testData[testKey]);
+            });
             it ('toWkt()', function () {
                 assertToWkt(testData[testKey]);
             });
