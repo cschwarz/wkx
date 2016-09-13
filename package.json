@@ -11,16 +11,16 @@
   "author": "Christian Schwarz",
   "license": "MIT",
   "devDependencies": {
-    "async": "^2.0.0-rc.6",
-    "browserify": "^13.0.1",
-    "coveralls": "^2.11.9",
+    "async": "^2.0.1",
+    "browserify": "^13.1.0",
+    "coveralls": "^2.11.12",
     "deep-eql": "^0.1.3",
-    "istanbul": "^0.4.4",
-    "jshint": "^2.9.2",
-    "json-stringify-pretty-compact": "^1.0.1",
-    "mocha": "^2.5.3",
-    "pg": "^6.0.1",
-    "uglify-js": "^2.6.4"
+    "istanbul": "^0.4.5",
+    "jshint": "^2.9.3",
+    "json-stringify-pretty-compact": "^1.0.2",
+    "mocha": "^3.0.2",
+    "pg": "^6.1.0",
+    "uglify-js": "^2.7.3"
   },
   "repository": {
     "type": "git",
