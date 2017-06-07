@@ -42,10 +42,7 @@ client.connect(function(err) {
             async.forEachOf(geometryFormats, function (geometryFormat, geometryFormatKey, 
                             geometryFormatCallback) {
                 client.query(geometryFormat.generateSql(), [testInput], function (err, result) {
-                    if (err) {
-                        testOutput[geometryFormat.name] = null;
-                    }
-                    else {
+                    if (!err) {
                         testOutput[geometryFormat.name] = result.rows[0][geometryFormat.name.toLowerCase()];
                         var wktResult = result.rows[0][geometryFormat.name.toLowerCase() + 'result'];
 

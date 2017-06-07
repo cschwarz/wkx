@@ -58,74 +58,46 @@ describe('wkx', function () {
         });
     });
 
-    function parseTest(testData, parseFunc, testProperty) {
+    function parseTest(name, testData, parseFunc, testProperty) {
         if (!testProperty(testData))
             return;
 
-        var wktResult = testData.results ? testProperty(testData.results) : testData.wkt;
-        if (!wktResult)
-            wktResult = testData.wkt;        
-        assert.equal(parseFunc(testProperty(testData)).toWkt(), wktResult);
+        it (name, function () {
+            var wktResult = testData.results ? testProperty(testData.results) : testData.wkt;
+            if (!wktResult)
+                wktResult = testData.wkt;        
+            assert.equal(parseFunc(testProperty(testData)).toWkt(), wktResult);
+        });
     }
 
-    function serializeTest(testData, serializeFunc, resultProperty) {
+    function serializeTest(name, testData, serializeFunc, resultProperty) {
         if (!resultProperty(testData))
             return;
 
-        var geometry = Geometry.parse(testData.wkt);
-        geometry.srid = 4326;
-        assert.equal(serializeFunc(geometry), resultProperty(testData));
+        it (name, function () {
+            var geometry = Geometry.parse(testData.wkt);
+            geometry.srid = 4326;
+            assert.equal(serializeFunc(geometry), resultProperty(testData));
+        });
     }
 
-    function createTest (testKey, testData) {
-        it ('parse(wkt)', function () {
-            parseTest(testData, d => Geometry.parse(d), d => d.wkt);
-        });
-        it ('parse(wkb)', function () {
-            parseTest(testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.wkb);
-        });
-        it ('parse(wkb xdr)', function () {
-            parseTest(testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.wkbXdr);
-        });
-        it ('parse(ewkt)', function () {
-            parseTest(testData, d => Geometry.parse(d), d => d.ewkt);
-        });
-        it ('parse(ewkb)', function () {
-            parseTest(testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.ewkb);
-        });
-        it ('parse(ewkb xdr)', function () {
-            parseTest(testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.ewkbXdr);
-        });
-        it ('parse(ewkb no srid)', function () {
-            parseTest(testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.ewkbNoSrid);
-        });
-        it ('parse(ewkb xdr no srid)', function () {
-            parseTest(testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.ewkbXdrNoSrid);
-        });
-        it ('parseTwkb()', function () {
-            parseTest(testData, d => Geometry.parseTwkb(new Buffer(d, 'hex')), d => d.twkb);
-        });
-        it ('parseGeoJSON()', function () {
-            parseTest(testData, d => Geometry.parseGeoJSON(JSON.parse(d)), d => d.geojson);
-        });
-        it ('toWkt()', function () {
-            serializeTest(testData, g => g.toWkt(), d => d.wkt);
-        });
-        it ('toWkb()', function () {
-            serializeTest(testData, g => g.toWkb().toString('hex'), d => d.wkb);
-        });
-        it ('toEwkt()', function () {
-            serializeTest(testData, g => g.toEwkt(), d => d.ewkt);
-        });
-        it ('toEwkb()', function () {
-            serializeTest(testData, g => g.toEwkb().toString('hex'), d => d.ewkb);
-        });
-        it ('toTwkb()', function () {
-            serializeTest(testData, g => g.toTwkb().toString('hex'), d => d.twkb);
-        });
-        it ('toGeoJSON()', function () {
-            serializeTest(testData, g => g.toGeoJSON(), d => d.geojson);
-        });
+    function createTest (testKey, testData) {        
+        parseTest('parse(wkt)', testData, d => Geometry.parse(d), d => d.wkt);
+        parseTest('parse(wkb)', testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.wkb);
+        parseTest('parse(wkb xdr)', testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.wkbXdr);
+        parseTest('parse(ewkt)', testData, d => Geometry.parse(d), d => d.ewkt);
+        parseTest('parse(ewkb)', testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.ewkb);
+        parseTest('parse(ewkb xdr)', testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.ewkbXdr);
+        parseTest('parse(ewkb no srid)', testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.ewkbNoSrid);
+        parseTest('parse(ewkb xdr no srid)', testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.ewkbXdrNoSrid);
+        parseTest('parseTwkb()', testData, d => Geometry.parseTwkb(new Buffer(d, 'hex')), d => d.twkb);
+        parseTest('parseGeoJSON()', testData, d => Geometry.parseGeoJSON(JSON.parse(d)), d => d.geojson);
+        serializeTest('toWkt()', testData, g => g.toWkt(), d => d.wkt);
+        serializeTest('toWkb()', testData, g => g.toWkb().toString('hex'), d => d.wkb);
+        serializeTest('toEwkt()', testData, g => g.toEwkt(), d => d.ewkt);
+        serializeTest('toEwkb()', testData, g => g.toEwkb().toString('hex'), d => d.ewkb);
+        serializeTest('toTwkb()', testData, g => g.toTwkb().toString('hex'), d => d.twkb);
+        serializeTest('toGeoJSON()', testData, g => g.toGeoJSON(), d => d.geojson);        
     }
 
     for (var dimensionKey in testData) {
