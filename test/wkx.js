@@ -65,7 +65,7 @@ describe('wkx', function () {
         it (name, function () {
             var wktResult = testData.results ? testProperty(testData.results) : testData.wkt;
             if (!wktResult)
-                wktResult = testData.wkt;        
+                wktResult = testData.wkt;
             assert.equal(parseFunc(testProperty(testData)).toWkt(), wktResult);
         });
     }
@@ -76,7 +76,7 @@ describe('wkx', function () {
 
         it (name, function () {
             var geometry = Geometry.parse(testData.wkt);
-            geometry.srid = 4326;
+            geometry.srid = 4326;            
             assert.equal(serializeFunc(geometry), resultProperty(testData));
         });
     }
@@ -97,7 +97,7 @@ describe('wkx', function () {
         serializeTest('toEwkt()', testData, g => g.toEwkt(), d => d.ewkt);
         serializeTest('toEwkb()', testData, g => g.toEwkb().toString('hex'), d => d.ewkb);
         serializeTest('toTwkb()', testData, g => g.toTwkb().toString('hex'), d => d.twkb);
-        serializeTest('toGeoJSON()', testData, g => g.toGeoJSON(), d => d.geojson);        
+        serializeTest('toGeoJSON()', testData, g => JSON.stringify(g.toGeoJSON()), d => d.geojson);        
     }
 
     for (var dimensionKey in testData) {
