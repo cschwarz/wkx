@@ -14,7 +14,7 @@ var geometryFormats = [
     new GeometryFormat('ewkbXdr', 'ST_AsEWKB', 'ST_GeomFromEWKB', true, 4326, '\'xdr\''),
     new GeometryFormat('ewkbNoSrid', 'ST_AsEWKB', 'ST_GeomFromEWKB', true),
     new GeometryFormat('ewkbXdrNoSrid', 'ST_AsEWKB', 'ST_GeomFromEWKB', true, null, '\'xdr\''),
-    new GeometryFormat('twkb', 'ST_AsTWKB', 'ST_GeomFromTWKB', true),
+    new GeometryFormat('twkb', 'ST_AsTWKB', 'ST_GeomFromTWKB', true, null, '5'),
     new GeometryFormat('geojson', 'ST_AsGeoJSON', 'ST_GeomFromGeoJSON', false)
 ];
 
