@@ -59,6 +59,9 @@ describe('wkx', function () {
     });
 
     function parseTest(testData, parseFunc, testProperty) {
+        if (!testProperty(testData))
+            return;
+
         var wktResult = testData.results ? testProperty(testData.results) : testData.wkt;
         if (!wktResult)
             wktResult = testData.wkt;        
@@ -66,6 +69,9 @@ describe('wkx', function () {
     }
 
     function serializeTest(testData, serializeFunc, resultProperty) {
+        if (!resultProperty(testData))
+            return;
+
         var geometry = Geometry.parse(testData.wkt);
         geometry.srid = 4326;
         assert.equal(serializeFunc(geometry), resultProperty(testData));
