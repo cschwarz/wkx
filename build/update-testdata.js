@@ -3,47 +3,68 @@ var pg = require('pg');
 var async = require('async');
 var stringify = require('json-stringify-pretty-compact');
 
-updateTestData('./test/testdata.json');
-updateTestData('./test/testdataZ.json');
-updateTestData('./test/testdataM.json');
-updateTestData('./test/testdataZM.json');
+var GeometryFormat = require('./geometryformat');
 
-function updateTestData(file) {
-    var testdata = JSON.parse(fs.readFileSync(file, { encoding: 'utf8' }));
+var geometryFormats = [
+    new GeometryFormat('wkt', 'ST_AsText', 'ST_GeomFromText', false),
+    new GeometryFormat('ewkt', 'ST_AsEWKT', 'ST_GeomFromEWKT', false, 4326),
+    new GeometryFormat('wkb', 'ST_AsBinary', 'ST_GeomFromWKB', true),
+    new GeometryFormat('ewkb', 'ST_AsEWKB', 'ST_GeomFromEWKB', true, 4326),
+    new GeometryFormat('wkbXdr', 'ST_AsBinary', 'ST_GeomFromWKB', true, null, '\'xdr\''),
+    new GeometryFormat('ewkbXdr', 'ST_AsEWKB', 'ST_GeomFromEWKB', true, 4326, '\'xdr\''),
+    new GeometryFormat('ewkbNoSrid', 'ST_AsEWKB', 'ST_GeomFromEWKB', true),
+    new GeometryFormat('ewkbXdrNoSrid', 'ST_AsEWKB', 'ST_GeomFromEWKB', true, null, '\'xdr\''),
+    new GeometryFormat('twkb', 'ST_AsTWKB', 'ST_GeomFromTWKB', true),
+    new GeometryFormat('geojson', 'ST_AsGeoJSON', 'ST_GeomFromGeoJSON', false)
+];
 
-    var connectionString = 'postgres://postgres:postgres@localhost/postgres';
+var testInputData = JSON.parse(fs.readFileSync('./test/tests.input.json', { encoding: 'utf8' }));
+var testOutputData = {};
 
-    var client = new pg.Client(connectionString);
-    client.connect(function(err) {
-        if (err) {
-            console.log(err);
-            return;
-        }
+var connectionString = 'postgres://postgres:postgres@localhost/postgres';
 
-        async.forEachOf(testdata, function (value, key, callback) {
-            client.query('SELECT encode(ST_AsBinary(ST_GeomFromText($1)), \'hex\') wkb, ' +
-                         'encode(ST_AsEWKB(ST_GeomFromText($1, 4326)), \'hex\') ewkb, ' +
-                         'encode(ST_AsBinary(ST_GeomFromText($1), \'xdr\'), \'hex\') wkbxdr, ' +
-                         'encode(ST_AsEWKB(ST_GeomFromText($1, 4326), \'xdr\'), \'hex\') ewkbxdr, ' +
-                         'encode(ST_AsEWKB(ST_GeomFromText($1)), \'hex\') ewkbnosrid, ' +
-                         'encode(ST_AsEWKB(ST_GeomFromText($1), \'xdr\'), \'hex\') ewkbxdrnosrid, ' +
-                         'encode(ST_AsTWKB(ST_GeomFromText($1, 4326)), \'hex\') twkb, ' +
-                         'ST_AsGeoJSON(ST_GeomFromText($1, 4326)) geojson', [value.wkt], function (err, result) {
+var client = new pg.Client(connectionString);
+client.connect(function(err) {
+    if (err) {
+        console.log(err);
+        return;
+    }
 
-                value.wkb = result.rows[0].wkb;
-                value.ewkb = result.rows[0].ewkb;
-                value.wkbXdr = result.rows[0].wkbxdr;
-                value.ewkbXdr = result.rows[0].ewkbxdr;
-                value.ewkbNoSrid = result.rows[0].ewkbnosrid;
-                value.ewkbXdrNoSrid = result.rows[0].ewkbxdrnosrid;
-                value.twkb = result.rows[0].twkb;
-                value.geoJSON = JSON.parse(result.rows[0].geojson);
+    async.forEachOf(testInputData, function (testDimension, testDimensionKey, dimensionCallback) {
+        var dimension = {};        
+        testOutputData[testDimensionKey] = dimension;
 
-                callback();
+        async.forEachOf(testDimension, function (testInput, testInputKey, testInputCallback) {
+            var testOutput = {};
+            var testOutputResult = {};
+            dimension[testInputKey] = testOutput;
+
+            async.forEachOf(geometryFormats, function (geometryFormat, geometryFormatKey, 
+                            geometryFormatCallback) {
+                client.query(geometryFormat.generateSql(), [testInput], function (err, result) {
+                    if (err) {
+                        testOutput[geometryFormat.name] = null;
+                    }
+                    else {
+                        testOutput[geometryFormat.name] = result.rows[0][geometryFormat.name.toLowerCase()];
+                        var wktResult = result.rows[0][geometryFormat.name.toLowerCase() + 'result'];
+
+                        if (testInput != wktResult)
+                            testOutputResult[geometryFormat.name] = wktResult;
+                    }
+
+                    geometryFormatCallback();
+                });
+            }, function () {
+                if (Object.keys(testOutputResult).length > 0)
+                    testOutput.results = testOutputResult;
+
+                testInputCallback();
             });
-        }, function () {
-            client.end();
-            fs.writeFileSync(file, stringify(testdata));
-        });
+        }, dimensionCallback);
+
+    }, function () {
+        client.end();
+        fs.writeFileSync('./test/testdata.json', stringify(testOutputData));
     });
-}
+});

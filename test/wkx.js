@@ -1,6 +1,7 @@
 /* jshint evil: true, unused: false */
 
 var eql = require('deep-eql');
+var assert = require('assert');
 
 var Geometry = require('../lib/geometry');
 var Point = require('../lib/point');
@@ -11,105 +12,7 @@ var MultiLineString = require('../lib/multilinestring');
 var MultiPolygon = require('../lib/multipolygon');
 var GeometryCollection = require('../lib/geometrycollection');
 
-var tests = {
-    '2D': require('./testdata.json'),
-    'Z': require('./testdataZ.json'),
-    'M': require('./testdataM.json'),
-    'ZM': require('./testdataZM.json')
-};
-
-var assert = require('assert');
-
-function assertParseWkt(data) {
-    assert(eql(Geometry.parse(data.wkt), eval(data.geometry)));
-}
-
-function assertParseWkb(data) {
-    var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
-    geometry = eval(geometry);
-    geometry.srid = undefined;
-    assert(eql(Geometry.parse(new Buffer(data.wkb, 'hex')), geometry));
-}
-
-function assertParseWkbXdr(data) {
-    var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
-    geometry = eval(geometry);
-    geometry.srid = undefined;
-    assert(eql(Geometry.parse(new Buffer(data.wkbXdr, 'hex')), geometry));
-}
-
-function assertParseEwkt(data) {
-    var geometry = eval(data.geometry);
-    geometry.srid = 4326;
-    assert(eql(Geometry.parse('SRID=4326;' + data.wkt), geometry));
-}
-
-function assertParseEwkb(data) {
-    var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
-    geometry = eval(geometry);
-    geometry.srid = 4326;
-    assert(eql(Geometry.parse(new Buffer(data.ewkb, 'hex')), geometry));
-}
-
-function assertParseEwkbXdr(data) {
-    var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
-    geometry = eval(geometry);
-    geometry.srid = 4326;
-    assert(eql(Geometry.parse(new Buffer(data.ewkbXdr, 'hex')), geometry));
-}
-
-function assertParseEwkbNoSrid(data) {
-    var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
-    geometry = eval(geometry);
-    assert(eql(Geometry.parse(new Buffer(data.ewkbNoSrid, 'hex')), geometry));
-}
-
-function assertParseEwkbXdrNoSrid(data) {
-    var geometry = data.wkbGeometry ? data.wkbGeometry : data.geometry;
-    geometry = eval(geometry);
-    assert(eql(Geometry.parse(new Buffer(data.ewkbXdrNoSrid, 'hex')), geometry));
-}
-
-function assertParseTwkb(data) {
-    var geometry = eval(data.geometry);
-    geometry.srid = undefined;
-    assert(eql(Geometry.parseTwkb(new Buffer(data.twkb, 'hex')), geometry));
-}
-
-function assertParseGeoJSON(data) {
-    var geometry = data.geoJSONGeometry ? data.geoJSONGeometry : data.geometry;
-    geometry = eval(geometry);
-    geometry.srid = undefined;
-    assert(eql(Geometry.parseGeoJSON(data.geoJSON), geometry));
-}
-
-function assertToWkt(data) {
-    assert.equal(eval(data.geometry).toWkt(), data.wkt);
-}
-
-function assertToWkb(data) {
-    assert.equal(eval(data.geometry).toWkb().toString('hex'), data.wkb);
-}
-
-function assertToEwkt(data) {
-    var geometry = eval(data.geometry);
-    geometry.srid = 4326;
-    assert.equal(geometry.toEwkt(), 'SRID=4326;' + data.wkt);
-}
-
-function assertToEwkb(data) {
-    var geometry = eval(data.geometry);
-    geometry.srid = 4326;
-    assert.equal(geometry.toEwkb().toString('hex'), data.ewkb);
-}
-
-function assertToTwkb(data) {
-    assert.equal(eval(data.geometry).toTwkb().toString('hex'), data.twkb);
-}
-
-function assertToGeoJSON(data) {
-    assert(eql(eval(data.geometry).toGeoJSON(), data.geoJSON));
-}
+var testData = require('./testdata.json');
 
 describe('wkx', function () {
     describe('Geometry', function () {
@@ -155,68 +58,77 @@ describe('wkx', function () {
         });
     });
 
+    function parseTest(testData, parseFunc, testProperty) {
+        var wktResult = testData.results ? testProperty(testData.results) : testData.wkt;
+        if (!wktResult)
+            wktResult = testData.wkt;        
+        assert.equal(parseFunc(testProperty(testData)).toWkt(), wktResult);
+    }
+
+    function serializeTest(testData, serializeFunc, resultProperty) {
+        var geometry = Geometry.parse(testData.wkt);
+        geometry.srid = 4326;
+        assert.equal(serializeFunc(geometry), resultProperty(testData));
+    }
+
     function createTest (testKey, testData) {
-        describe(testKey, function () {
-            it ('parse(wkt)', function () {
-                assertParseWkt(testData[testKey]);
-            });
-            it ('parse(wkb)', function () {
-                assertParseWkb(testData[testKey]);
-            });
-            it ('parse(wkb xdr)', function () {
-                assertParseWkbXdr(testData[testKey]);
-            });
-            it ('parse(ewkt)', function () {
-                assertParseEwkt(testData[testKey]);
-            });
-            it ('parse(ewkb)', function () {
-                assertParseEwkb(testData[testKey]);
-            });
-            it ('parse(ewkb xdr)', function () {
-                assertParseEwkbXdr(testData[testKey]);
-            });
-            it ('parse(ewkb no srid)', function () {
-                assertParseEwkbNoSrid(testData[testKey]);
-            });
-            it ('parse(ewkb xdr no srid)', function () {
-                assertParseEwkbXdrNoSrid(testData[testKey]);
-            });
-            it ('parseTwkb()', function () {
-                assertParseTwkb(testData[testKey]);
-            });
-            it ('parseGeoJSON()', function () {
-                assertParseGeoJSON(testData[testKey]);
-            });
-            it ('toWkt()', function () {
-                assertToWkt(testData[testKey]);
-            });
-            it ('toWkb()', function () {
-                assertToWkb(testData[testKey]);
-            });
-            it ('toEwkt()', function () {
-                assertToEwkt(testData[testKey]);
-            });
-            it ('toEwkb()', function () {
-                assertToEwkb(testData[testKey]);
-            });
-            it ('toTwkb()', function () {
-                assertToTwkb(testData[testKey]);
-            });
-            it ('toGeoJSON()', function () {
-                assertToGeoJSON(testData[testKey]);
-            });
+        it ('parse(wkt)', function () {
+            parseTest(testData, d => Geometry.parse(d), d => d.wkt);
+        });
+        it ('parse(wkb)', function () {
+            parseTest(testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.wkb);
+        });
+        it ('parse(wkb xdr)', function () {
+            parseTest(testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.wkbXdr);
+        });
+        it ('parse(ewkt)', function () {
+            parseTest(testData, d => Geometry.parse(d), d => d.ewkt);
+        });
+        it ('parse(ewkb)', function () {
+            parseTest(testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.ewkb);
+        });
+        it ('parse(ewkb xdr)', function () {
+            parseTest(testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.ewkbXdr);
+        });
+        it ('parse(ewkb no srid)', function () {
+            parseTest(testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.ewkbNoSrid);
+        });
+        it ('parse(ewkb xdr no srid)', function () {
+            parseTest(testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.ewkbXdrNoSrid);
+        });
+        it ('parseTwkb()', function () {
+            parseTest(testData, d => Geometry.parseTwkb(new Buffer(d, 'hex')), d => d.twkb);
+        });
+        it ('parseGeoJSON()', function () {
+            parseTest(testData, d => Geometry.parseGeoJSON(JSON.parse(d)), d => d.geojson);
+        });
+        it ('toWkt()', function () {
+            serializeTest(testData, g => g.toWkt(), d => d.wkt);
+        });
+        it ('toWkb()', function () {
+            serializeTest(testData, g => g.toWkb().toString('hex'), d => d.wkb);
+        });
+        it ('toEwkt()', function () {
+            serializeTest(testData, g => g.toEwkt(), d => d.ewkt);
+        });
+        it ('toEwkb()', function () {
+            serializeTest(testData, g => g.toEwkb().toString('hex'), d => d.ewkb);
+        });
+        it ('toTwkb()', function () {
+            serializeTest(testData, g => g.toTwkb().toString('hex'), d => d.twkb);
+        });
+        it ('toGeoJSON()', function () {
+            serializeTest(testData, g => g.toGeoJSON(), d => d.geojson);
         });
     }
 
-    function createTests (testKey, testData) {
-        describe(testKey, function () {
-            for (var testDataKey in testData) {
-                createTest(testDataKey, testData);
+    for (var dimensionKey in testData) {
+        describe(dimensionKey, function () {
+            for (var testKey in testData[dimensionKey]) {
+                describe(testKey, function () {
+                    createTest(testKey, testData[dimensionKey][testKey]);
+                });
             }
         });
-    }
-
-    for (var testKey in tests) {
-        createTests(testKey, tests[testKey]);
     }
 });
