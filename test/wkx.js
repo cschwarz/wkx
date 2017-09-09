@@ -31,13 +31,13 @@ describe('wkx', function () {
             assert.deepEqual(Geometry.parse('POINT(1.2 -3.4)'), new Point(1.2, -3.4));
 
             assert.deepEqual(Geometry.parse('MULTIPOINT(1 2,3 4)'),
-                                            new MultiPoint([new Point(1, 2), new Point(3, 4)]));
+                new MultiPoint([new Point(1, 2), new Point(3, 4)]));
             assert.deepEqual(Geometry.parse('MULTIPOINT(1 2, 3 4)'),
-                                            new MultiPoint([new Point(1, 2), new Point(3, 4)]));
+                new MultiPoint([new Point(1, 2), new Point(3, 4)]));
             assert.deepEqual(Geometry.parse('MULTIPOINT((1 2),(3 4))'),
-                                            new MultiPoint([new Point(1, 2), new Point(3, 4)]));
+                new MultiPoint([new Point(1, 2), new Point(3, 4)]));
             assert.deepEqual(Geometry.parse('MULTIPOINT((1 2), (3 4))'),
-                                            new MultiPoint([new Point(1, 2), new Point(3, 4)]));
+                new MultiPoint([new Point(1, 2), new Point(3, 4)]));
         });
         it('parse() - invalid input', function () {
             assert.throws(Geometry.parse, /first argument must be a string or Buffer/);
@@ -62,7 +62,7 @@ describe('wkx', function () {
         if (!testProperty(testData))
             return;
 
-        it (name, function () {
+        it(name, function () {
             var wktResult = testData.results ? testProperty(testData.results) : testData.wkt;
             if (!wktResult)
                 wktResult = testData.wkt;
@@ -74,14 +74,14 @@ describe('wkx', function () {
         if (!resultProperty(testData))
             return;
 
-        it (name, function () {
+        it(name, function () {
             var geometry = Geometry.parse(testData.wkt);
-            geometry.srid = 4326;            
+            geometry.srid = 4326;
             assert.equal(serializeFunc(geometry), resultProperty(testData));
         });
     }
 
-    function createTest (testKey, testData) {        
+    function createTest(testKey, testData) {
         parseTest('parse(wkt)', testData, d => Geometry.parse(d), d => d.wkt);
         parseTest('parse(wkb)', testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.wkb);
         parseTest('parse(wkb xdr)', testData, d => Geometry.parse(new Buffer(d, 'hex')), d => d.wkbXdr);
@@ -97,10 +97,11 @@ describe('wkx', function () {
         serializeTest('toEwkt()', testData, g => g.toEwkt(), d => d.ewkt);
         serializeTest('toEwkb()', testData, g => g.toEwkb().toString('hex'), d => d.ewkb);
         serializeTest('toTwkb()', testData, g => g.toTwkb().toString('hex'), d => d.twkb);
-        serializeTest('toGeoJSON()', testData, g => JSON.stringify(g.toGeoJSON()), d => d.geojson);        
+        serializeTest('toGeoJSON()', testData, g => JSON.stringify(g.toGeoJSON()), d => d.geojson);
     }
 
     for (var dimensionKey in testData) {
+        /* jshint loopfunc: true */
         describe(dimensionKey, function () {
             for (var testKey in testData[dimensionKey]) {
                 describe(testKey, function () {
