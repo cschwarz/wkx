@@ -12,16 +12,16 @@
   "author": "Christian Schwarz",
   "license": "MIT",
   "devDependencies": {
-    "async": "^2.1.2",
-    "browserify": "^13.1.1",
-    "coveralls": "^2.11.15",
-    "deep-eql": "^2.0.1",
+    "async": "^2.5.0",
+    "browserify": "^14.4.0",
+    "coveralls": "^2.13.1",
+    "deep-eql": "^3.0.1",
     "istanbul": "^0.4.5",
-    "jshint": "^2.9.4",
-    "json-stringify-pretty-compact": "^1.0.2",
-    "mocha": "^3.1.2",
-    "pg": "^6.1.0",
-    "uglify-js": "^2.7.4"
+    "jshint": "^2.9.5",
+    "json-stringify-pretty-compact": "^1.0.4",
+    "mocha": "^3.5.0",
+    "pg": "^7.3.0",
+    "uglify-js": "^3.0.28"
   },
   "repository": {
     "type": "git",
@@ -40,6 +40,6 @@
     "spatial"
   ],
   "dependencies": {
-    "@types/node": "^6.0.48"
+    "@types/node": "^8.0.28"
   }
 }
