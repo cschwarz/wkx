@@ -4,6 +4,10 @@
   "description": "A WKT/WKB/EWKT/EWKB/TWKB/GeoJSON parser and serializer",
   "main": "lib/wkx.js",
   "types": "lib/wkx.d.ts",
+  "files": [
+	"dist/",
+	"lib/"
+  ],
   "scripts": {
     "test": "jshint . && mocha",
     "build": "browserify -r buffer -r ./lib/wkx.js:wkx ./lib/wkx.js > ./dist/wkx.js && uglifyjs -c -m -- ./dist/wkx.js > ./dist/wkx.min.js",
