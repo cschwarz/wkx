@@ -79,7 +79,7 @@ function assertParseTwkb(data) {
 function assertParseGeoJSON(data) {
     var geometry = data.geoJSONGeometry ? data.geoJSONGeometry : data.geometry;
     geometry = eval(geometry);
-    geometry.srid = undefined;
+    geometry.srid = 4326;
     assert(eql(Geometry.parseGeoJSON(data.geoJSON), geometry));
 }
 
