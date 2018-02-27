@@ -5,12 +5,12 @@
   "main": "lib/wkx.js",
   "types": "lib/wkx.d.ts",
   "files": [
-	"dist/",
-	"lib/"
+    "dist/",
+    "lib/"
   ],
   "scripts": {
     "test": "jshint . && mocha",
-    "build": "browserify -r buffer -r ./lib/wkx.js:wkx ./lib/wkx.js > ./dist/wkx.js && uglifyjs -c -m -- ./dist/wkx.js > ./dist/wkx.min.js",
+    "build": "mkdirp ./dist && browserify -r buffer -r ./lib/wkx.js:wkx ./lib/wkx.js > ./dist/wkx.js && uglifyjs -c -m -- ./dist/wkx.js > ./dist/wkx.min.js",
     "coveralls": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec && cat ./coverage/lcov.info | coveralls && rm -rf ./coverage"
   },
   "author": "Christian Schwarz",
@@ -23,6 +23,7 @@
     "istanbul": "^0.4.5",
     "jshint": "^2.9.5",
     "json-stringify-pretty-compact": "^1.1.0",
+    "mkdirp": "^0.5.1",
     "mocha": "^5.0.1",
     "pg": "^7.4.1",
     "uglify-js": "^3.3.12"
