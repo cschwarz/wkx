@@ -44,10 +44,10 @@ var wktString = new wkx.Point(1, 2).toWkt();
 var wkbBuffer = new wkx.Point(1, 2).toWkb();
 
 //Serializing a Point geometry to EWKT
-var ewktString = new wkx.Point(1, 2).toEwkt();
+var ewktString = new wkx.Point(1, 2, undefined, undefined, 4326).toEwkt();
 
 //Serializing a Point geometry to EWKB
-var ewkbBuffer = new wkx.Point(1, 2).toEwkb();
+var ewkbBuffer = new wkx.Point(1, 2, undefined, undefined, 4326).toEwkb();
 
 //Serializing a Point geometry to TWKB
 var twkbBuffer = new wkx.Point(1, 2).toTwkb();
