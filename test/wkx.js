@@ -127,14 +127,19 @@ describe('wkx', function () {
             assert.deepEqual(Geometry.parse('POINT(-1.2 3.4)'), new Point(-1.2, 3.4));
             assert.deepEqual(Geometry.parse('POINT(1.2 -3.4)'), new Point(1.2, -3.4));
 
+            assert.deepEqual(Geometry.parse('POINT(1.2e1 3.4e1)'), new Point(12, 34));
+            assert.deepEqual(Geometry.parse('POINT(1.2e-1 3.4e-1)'), new Point(0.12, 0.34));
+            assert.deepEqual(Geometry.parse('POINT(-1.2e1 -3.4e1)'), new Point(-12, -34));
+            assert.deepEqual(Geometry.parse('POINT(-1.2e-1 -3.4e-1)'), new Point(-0.12, -0.34));
+
             assert.deepEqual(Geometry.parse('MULTIPOINT(1 2,3 4)'),
-                                            new MultiPoint([new Point(1, 2), new Point(3, 4)]));
+                new MultiPoint([new Point(1, 2), new Point(3, 4)]));
             assert.deepEqual(Geometry.parse('MULTIPOINT(1 2, 3 4)'),
-                                            new MultiPoint([new Point(1, 2), new Point(3, 4)]));
+                new MultiPoint([new Point(1, 2), new Point(3, 4)]));
             assert.deepEqual(Geometry.parse('MULTIPOINT((1 2),(3 4))'),
-                                            new MultiPoint([new Point(1, 2), new Point(3, 4)]));
+                new MultiPoint([new Point(1, 2), new Point(3, 4)]));
             assert.deepEqual(Geometry.parse('MULTIPOINT((1 2), (3 4))'),
-                                            new MultiPoint([new Point(1, 2), new Point(3, 4)]));
+                new MultiPoint([new Point(1, 2), new Point(3, 4)]));
         });
         it('parse() - invalid input', function () {
             assert.throws(Geometry.parse, /first argument must be a string or Buffer/);
@@ -155,60 +160,60 @@ describe('wkx', function () {
         });
     });
 
-    function createTest (testKey, testData) {
+    function createTest(testKey, testData) {
         describe(testKey, function () {
-            it ('parse(wkt)', function () {
+            it('parse(wkt)', function () {
                 assertParseWkt(testData[testKey]);
             });
-            it ('parse(wkb)', function () {
+            it('parse(wkb)', function () {
                 assertParseWkb(testData[testKey]);
             });
-            it ('parse(wkb xdr)', function () {
+            it('parse(wkb xdr)', function () {
                 assertParseWkbXdr(testData[testKey]);
             });
-            it ('parse(ewkt)', function () {
+            it('parse(ewkt)', function () {
                 assertParseEwkt(testData[testKey]);
             });
-            it ('parse(ewkb)', function () {
+            it('parse(ewkb)', function () {
                 assertParseEwkb(testData[testKey]);
             });
-            it ('parse(ewkb xdr)', function () {
+            it('parse(ewkb xdr)', function () {
                 assertParseEwkbXdr(testData[testKey]);
             });
-            it ('parse(ewkb no srid)', function () {
+            it('parse(ewkb no srid)', function () {
                 assertParseEwkbNoSrid(testData[testKey]);
             });
-            it ('parse(ewkb xdr no srid)', function () {
+            it('parse(ewkb xdr no srid)', function () {
                 assertParseEwkbXdrNoSrid(testData[testKey]);
             });
-            it ('parseTwkb()', function () {
+            it('parseTwkb()', function () {
                 assertParseTwkb(testData[testKey]);
             });
-            it ('parseGeoJSON()', function () {
+            it('parseGeoJSON()', function () {
                 assertParseGeoJSON(testData[testKey]);
             });
-            it ('toWkt()', function () {
+            it('toWkt()', function () {
                 assertToWkt(testData[testKey]);
             });
-            it ('toWkb()', function () {
+            it('toWkb()', function () {
                 assertToWkb(testData[testKey]);
             });
-            it ('toEwkt()', function () {
+            it('toEwkt()', function () {
                 assertToEwkt(testData[testKey]);
             });
-            it ('toEwkb()', function () {
+            it('toEwkb()', function () {
                 assertToEwkb(testData[testKey]);
             });
-            it ('toTwkb()', function () {
+            it('toTwkb()', function () {
                 assertToTwkb(testData[testKey]);
             });
-            it ('toGeoJSON()', function () {
+            it('toGeoJSON()', function () {
                 assertToGeoJSON(testData[testKey]);
             });
         });
     }
 
-    function createTests (testKey, testData) {
+    function createTests(testKey, testData) {
         describe(testKey, function () {
             for (var testDataKey in testData) {
                 createTest(testDataKey, testData);
