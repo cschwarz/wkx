@@ -1,6 +1,6 @@
 {
   "name": "wkx",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "A WKT/WKB/EWKT/EWKB/TWKB/GeoJSON parser and serializer",
   "main": "lib/wkx.js",
   "types": "lib/wkx.d.ts",
