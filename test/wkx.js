@@ -18,6 +18,8 @@ var tests = {
     'ZM': require('./testdataZM.json')
 };
 
+var issueTests = require('./issuetestdata.json');
+
 var assert = require('assert');
 
 function assertParseWkt(data) {
@@ -158,6 +160,9 @@ describe('wkx', function () {
                 Geometry.parseGeoJSON({ type: 'TEST' });
             }, /GeometryType TEST not supported/);
         });
+        it('parse(wkt) - #31', function () {
+            assert.deepEqual(Geometry.parse(issueTests['#31'].wkt), eval(issueTests['#31'].geometry));
+		});
     });
 
     function createTest(testKey, testData) {
