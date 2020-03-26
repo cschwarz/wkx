@@ -9,9 +9,9 @@
     "lib/"
   ],
   "scripts": {
-    "test": "jshint . && mocha",
+    "test": "jshint . && nyc mocha",
     "build": "mkdirp ./dist && browserify -r buffer -r ./lib/wkx.js:wkx ./lib/wkx.js > ./dist/wkx.js && uglifyjs -c -m -- ./dist/wkx.js > ./dist/wkx.min.js",
-    "coveralls": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec && cat ./coverage/lcov.info | coveralls && rm -rf ./coverage"
+    "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
   "author": "Christian Schwarz",
   "license": "MIT",
@@ -20,11 +20,11 @@
     "browserify": "^16.5.0",
     "coveralls": "^3.0.11",
     "deep-eql": "^4.0.0",
-    "istanbul": "^0.4.5",
     "jshint": "^2.11.0",
     "json-stringify-pretty-compact": "^2.0.0",
     "mkdirp": "^1.0.3",
     "mocha": "^7.1.1",
+    "nyc": "^15.0.0",
     "pg": "^7.18.2",
     "uglify-js": "^3.8.0"
   },

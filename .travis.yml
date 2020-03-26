@@ -4,4 +4,4 @@ node_js:
   - "lts/*"
   - "node"
 after_script:
-  - npm run coveralls
+  - npm run coverage

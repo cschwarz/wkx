@@ -1,0 +1,6 @@
+{
+  "nyc": {
+    "all": true,
+    "check-coverage": true
+  }
+}
