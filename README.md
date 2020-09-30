@@ -70,7 +70,7 @@ your code.
 
 ----
 
-Regardless of which of the preceeding options you choose, using `wkx` in the browser will look the same:
+Regardless of which of the preceding options you choose, using `wkx` in the browser will look the same:
 ```javascript
 var wkx = require('wkx');
 
