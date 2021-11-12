@@ -10,7 +10,9 @@
   ],
   "scripts": {
     "test": "jshint . && nyc mocha",
-    "build": "mkdirp ./dist && browserify -r buffer -r ./lib/wkx.js:wkx ./lib/wkx.js > ./dist/wkx.js && uglifyjs -c -m -- ./dist/wkx.js > ./dist/wkx.min.js",
+    "build": "mkdirp ./dist && browserify -r ./lib/wkx.js:wkx ./lib/wkx.js > ./dist/wkx.js",
+    "build__": "mkdirp ./dist && browserify -r ./lib/wkx.js:wkx ./lib/wkx.js > ./dist/wkx.js && uglifyjs -c -m -- ./dist/wkx.js > ./dist/wkx.min.js",
+    "build_": "mkdirp ./dist && browserify -r buffer -r ./lib/wkx.js:wkx ./lib/wkx.js > ./dist/wkx.js && uglifyjs -c -m -- ./dist/wkx.js > ./dist/wkx.min.js",
     "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
   "author": "Christian Schwarz",
@@ -45,6 +47,7 @@
     "spatial"
   ],
   "dependencies": {
-    "@types/node": "*"
+    "@types/node": "*",
+    "buffer": "^6.0.3"
   }
 }
