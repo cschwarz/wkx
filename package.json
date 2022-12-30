@@ -23,7 +23,7 @@
     "jshint": "^2.11.0",
     "json-stringify-pretty-compact": "^2.0.0",
     "mkdirp": "^1.0.3",
-    "mocha": "^7.1.1",
+    "mocha": "^10.2.0",
     "nyc": "^15.0.0",
     "pg": "^7.18.2",
     "uglify-js": "^3.8.0"
