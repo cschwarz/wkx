@@ -10,6 +10,8 @@ var MultiPoint = require('../lib/multipoint');
 var MultiLineString = require('../lib/multilinestring');
 var MultiPolygon = require('../lib/multipolygon');
 var GeometryCollection = require('../lib/geometrycollection');
+var Tin = require('../lib/tin');
+var Triangle = require('../lib/triangle');
 
 var tests = {
     '2D': require('./testdata.json'),
@@ -17,6 +19,7 @@ var tests = {
     'M': require('./testdataM.json'),
     'ZM': require('./testdataZM.json')
 };
+var testTin = require('./testdatatin.json');
 
 var issueTests = require('./issuetestdata.json');
 
@@ -229,4 +232,27 @@ describe('wkx', function () {
     for (var testKey in tests) {
         createTests(testKey, tests[testKey]);
     }
+
+    function createTinTest(testKey, testData) {
+        describe(testKey, function () {
+            it('parse(wkt)', function () {
+                assertParseWkt(testData);
+            });
+            it('parse(wkb)', function () {
+                assertParseWkb(testData);
+            });
+            it('toWkt()', function () {
+                assertToWkt(testData);
+            });
+            it('toWkb()', function () {
+                assertToWkb(testData);
+            });
+        });
+    }
+
+    describe('TIN handling', function() {
+        for (var testKey in testTin) {
+            createTinTest(testKey, testTin[testKey]);
+        }
+    });
 });
