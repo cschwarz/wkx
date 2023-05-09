@@ -10,6 +10,7 @@ A WKT/WKB/EWKT/EWKB/TWKB/GeoJSON parser and serializer with support for
 - MultiLineString
 - MultiPolygon
 - GeometryCollection
+- TIN
 
 Examples
 --------
